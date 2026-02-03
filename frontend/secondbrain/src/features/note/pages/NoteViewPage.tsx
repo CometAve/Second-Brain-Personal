@@ -1,16 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { MainLayout } from '@/layouts/MainLayout';
-import { Graph } from '@/features/main/components/Graph';
 import { SidePeekOverlay } from '@/features/note/components/SidePeekOverlay';
 import { DraftToolbar } from '@/features/note/components/DraftToolbar';
 import { NoteTitleInput } from '@/features/note/components/NoteTitleInput';
-import { NoteEditor } from '@/features/note/components/NoteEditor';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary/ErrorBoundary';
 import { useNoteQuery } from '@/features/note/hooks/useNoteQuery';
 import { useNoteDelete } from '@/features/note/hooks/useNoteDelete';
 import { useGraphStore } from '@/features/main/stores/graphStore';
 import '@/shared/styles/custom-scrollbar.css';
+
+// 무거운 컴포넌트 lazy loading (three.js, Milkdown 번들 분리)
+const Graph = lazy(() =>
+  import('@/features/main/components/Graph').then((m) => ({ default: m.Graph })),
+);
+const NoteEditor = lazy(() =>
+  import('@/features/note/components/NoteEditor').then((m) => ({ default: m.NoteEditor })),
+);
 
 /**
  * Note 페이지 with SidePeekOverlay
@@ -71,8 +78,12 @@ export function NoteViewPage() {
 
   return (
     <MainLayout onPlusClick={handleCreateDraft}>
-      {/* 배경: Graph */}
-      <Graph />
+      {/* 배경: Graph (lazy loaded) */}
+      <ErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Graph />
+        </Suspense>
+      </ErrorBoundary>
 
       {/* Side Peek: Note */}
       <SidePeekOverlay
@@ -111,9 +122,13 @@ export function NoteViewPage() {
                 placeholder="제목을 입력해주세요..."
               />
 
-              {/* 마크다운 에디터 */}
+              {/* 마크다운 에디터 (lazy loaded) */}
               <div className="pb-20">
-                <NoteEditor defaultValue={noteData.content} />
+                <ErrorBoundary>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <NoteEditor defaultValue={noteData.content} />
+                  </Suspense>
+                </ErrorBoundary>
               </div>
             </div>
           )}

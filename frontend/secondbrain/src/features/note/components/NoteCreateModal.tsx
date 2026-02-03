@@ -1,9 +1,15 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { SlideOverModal } from '@/shared/components/SlideOverModal/SlideOverModal';
 import { GlassElement } from '@/shared/components/GlassElement/GlassElement';
 import { ToggleSwitch } from '@/shared/components/ToggleSwitch/ToggleSwitch';
-import { NoteEditor } from '@/features/note/components/NoteEditor';
 import { NoteTitleInput } from '@/features/note/components/NoteTitleInput';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary/ErrorBoundary';
+
+// 무거운 컴포넌트 lazy loading (Milkdown 번들 분리)
+const NoteEditor = lazy(() =>
+  import('@/features/note/components/NoteEditor').then((m) => ({ default: m.NoteEditor })),
+);
 import DeleteIcon from '@/shared/components/icon/Delete.svg?react';
 import ExpandIcon from '@/shared/components/icon/Expand.svg?react';
 import CompressIcon from '@/shared/components/icon/Compress.svg?react';
@@ -24,7 +30,7 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [title, setTitle] = useState('');
-  // const [content, setContent] = useState(''); // TODO: Milkdown에서 content 가져오기 구현 시 사용
+  // TODO: NoteEditor ref를 통해 content 추출 및 저장 기능 구현 필요
 
   function toggleFullscreen() {
     setIsFullscreen((prev) => !prev);
@@ -39,18 +45,8 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
 
   function handleTogglePublic(checked: boolean) {
     setIsPublic(checked);
-    // TODO: API 호출하여 공개 설정 저장
+    // TODO: isPublic 상태를 노트 저장 시 함께 전송
   }
-
-  // TODO: 저장 기능 구현 시 사용
-  // function handleSave() {
-  //   const noteData = {
-  //     title,
-  //     content, // Milkdown.getMarkdown()
-  //     isPublic,
-  //   };
-  //   // API 호출
-  // }
 
   return (
     <SlideOverModal
@@ -86,9 +82,13 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
           {/* Title input */}
           <NoteTitleInput value={title} onChange={setTitle} placeholder="Untitled" />
 
-          {/* Content editor */}
+          {/* Content editor (lazy loaded) */}
           <div className="flex-1">
-            <NoteEditor />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <NoteEditor />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>

@@ -1,8 +1,14 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { NoteLayout } from '@/layouts/NoteLayout';
 import { NoteTitleInput } from '@/features/note/components/NoteTitleInput';
-import { NoteEditor } from '@/features/note/components/NoteEditor';
 import { ToggleSwitch } from '@/shared/components/ToggleSwitch/ToggleSwitch';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary/ErrorBoundary';
+
+// 무거운 컴포넌트 lazy loading (Milkdown 번들 분리)
+const NoteEditor = lazy(() =>
+  import('@/features/note/components/NoteEditor').then((m) => ({ default: m.NoteEditor })),
+);
 import { GlassElement } from '@/shared/components/GlassElement/GlassElement';
 import { useAuthStore } from '@/stores/authStore';
 import { useReminderToggle } from '@/features/reminder/hooks/useReminderToggle';
@@ -20,8 +26,7 @@ import '@/shared/styles/custom-scrollbar.css';
  */
 export function NotePage() {
   const [title, setTitle] = useState('');
-  // TODO: NoteEditor에서 content 추출 및 저장 기능 구현
-  // const [content, setContent] = useState('');
+  // TODO: NoteEditor ref를 통해 content 추출 후 자동 저장 연동 필요
 
   // Reminder 상태 관리 (서버와 동기화)
   const { user } = useAuthStore();
@@ -63,9 +68,13 @@ export function NotePage() {
           {/* 제목 입력 */}
           <NoteTitleInput value={title} onChange={setTitle} placeholder="제목을 입력해주세요..." />
 
-          {/* 마크다운 에디터 */}
+          {/* 마크다운 에디터 (lazy loaded) */}
           <div className="pb-20">
-            <NoteEditor defaultValue="" />
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingSpinner />}>
+                <NoteEditor defaultValue="" />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </div>

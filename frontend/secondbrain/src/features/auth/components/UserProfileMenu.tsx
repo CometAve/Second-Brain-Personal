@@ -5,8 +5,6 @@ import { GlassElement } from '@/shared/components/GlassElement/GlassElement';
 import { LogoutButton } from '@/features/auth/components/LogoutButton';
 import { ApiKeyMenuItem } from '@/features/auth/components/ApiKeyMenuItem';
 import { ApiKeyManagement } from '@/features/auth/components/ApiKeyManagement';
-// TODO: 향후 리마인더 기능 추가 시 복원
-// import { ReminderToggleMenuItem } from '@/features/reminder/components/ReminderToggleMenuItem';
 import { Dropdown } from '@/shared/components/Dropdown/Dropdown';
 import LogoutIcon from '@/shared/components/icon/Logout.svg?react';
 import type { UserProfileView } from '@/features/auth/types/apiKey';
@@ -59,19 +57,7 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
             {/* API Key 메뉴 아이템 */}
             <ApiKeyMenuItem onClick={() => setView('apikey-management')} />
 
-            {/* TODO: 향후 리마인더 기능 추가 예정
-            <ReminderToggleMenuItem />
-
-            <button
-              role="menuitem"
-              className="flex w-full items-center justify-between rounded px-4 py-2.5 text-left text-sm text-white transition-colors duration-150 ease-in-out hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 motion-reduce:transition-none"
-              onClick={() => {
-                // 향후: 리마인더 관리 페이지로 이동
-              }}
-            >
-              <span>리마인더 관리</span>
-            </button>
-            */}
+            {/* TODO: 향후 리마인더 기능 추가 예정 - ReminderToggleMenuItem, 리마인더 관리 메뉴 */}
 
             <hr className="border-white/20" />
 
