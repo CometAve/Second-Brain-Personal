@@ -5,6 +5,7 @@ import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { refreshToken } from '@/features/auth/services/authService';
 import { getCurrentUser } from '@/features/auth/services/userService';
+import { isAxiosErrorWithStatus } from '@/shared/utils/typeGuards';
 
 /**
  * 루트 레이아웃
@@ -52,9 +53,11 @@ export const Route = createRootRoute({
       },
       // 네트워크 오류 시 재시도 설정
       retry: (failureCount, error) => {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
-          return false; // 인증 실패는 재시도 안 함
+        if (isAxiosErrorWithStatus(error)) {
+          const status = error.response.status;
+          if (status === 401 || status === 403) {
+            return false; // 인증 실패는 재시도 안 함
+          }
         }
         return failureCount < 3; // 네트워크 오류는 3번까지 재시도
       },

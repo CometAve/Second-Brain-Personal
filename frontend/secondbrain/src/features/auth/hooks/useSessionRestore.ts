@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { refreshToken } from '@/features/auth/services/authService';
 import { getCurrentUser } from '@/features/auth/services/userService';
+import { isAxiosErrorWithStatus } from '@/shared/utils/typeGuards';
 
 /**
  * 페이지 로드 시 Refresh Token으로 세션을 자동 복원하는 Query 훅
@@ -43,11 +44,12 @@ export function useSessionRestore() {
     // 네트워크 오류와 인증 실패를 구분하여 재시도 로직 적용
     retry: (failureCount, error) => {
       // AxiosError인 경우 status code 확인
-      const axiosError = error as { response?: { status?: number } };
-
-      // 401/403은 토큰 만료 → 재시도 안 함
-      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
-        return false;
+      if (isAxiosErrorWithStatus(error)) {
+        const status = error.response.status;
+        // 401/403은 토큰 만료 → 재시도 안 함
+        if (status === 401 || status === 403) {
+          return false;
+        }
       }
 
       // 네트워크 오류(5xx, timeout 등)는 3번까지 재시도

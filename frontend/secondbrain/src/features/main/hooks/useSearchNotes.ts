@@ -14,12 +14,12 @@ export function useSearchNotes<Select = InfiniteData<SearchNoteData>>({
   keyword,
   select,
 }: UseSearchNotesParams<Select>) {
-  return useInfiniteQuery<SearchNoteData, Error, Select>({
+  return useInfiniteQuery<SearchNoteData, Error, Select, readonly unknown[], number>({
     queryKey: ['notes', 'search', keyword],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam }) => {
       const response = await searchAPI.getSearchNote({
         keyword,
-        page: pageParam as number,
+        page: pageParam,
         size: PAGE_SIZE,
       });
       return response.data;

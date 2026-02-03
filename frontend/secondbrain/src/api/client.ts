@@ -5,6 +5,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { env } from '@/config/env';
 
 /**
+ * Axios 요청 설정 확장 인터페이스
+ * - _retry: 토큰 갱신 후 재시도 여부 추적
+ */
+interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
+  _retry?: boolean;
+}
+
+/**
  * BaseResponse 타입 가드 함수
  * - 응답 데이터가 BaseResponse 구조인지 검증
  * - TypeScript 타입 내로잉(narrowing) 지원
@@ -75,9 +83,7 @@ const createApiClient = () => {
       return response;
     },
     async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & {
-        _retry?: boolean;
-      };
+      const originalRequest = error.config as ExtendedAxiosRequestConfig;
 
       // /api/auth/refresh 자체의 401은 무시 (무한 루프 방지)
       if (originalRequest.url?.includes('/api/auth/refresh')) {

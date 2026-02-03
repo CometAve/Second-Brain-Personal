@@ -1,6 +1,7 @@
 import { apiClient } from '@/api/client';
 import type { BaseResponse } from '@/shared/types/api';
 import type { TokenResponse } from '@/features/auth/types/auth';
+import { isUnauthorizedError } from '@/shared/utils/typeGuards';
 
 /**
  * POST /api/auth/token
@@ -27,12 +28,9 @@ export async function refreshToken(): Promise<BaseResponse<TokenResponse> | null
     return response.data;
   } catch (error) {
     // 401 Unauthorized는 로그아웃 상태로 처리 (에러를 throw하지 않음)
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status: number } };
-      if (axiosError.response?.status === 401) {
-        console.info('Refresh token expired or invalid - user needs to re-authenticate');
-        return null;
-      }
+    if (isUnauthorizedError(error)) {
+      console.info('Refresh token expired or invalid - user needs to re-authenticate');
+      return null;
     }
     // 다른 에러는 그대로 throw
     throw error;
