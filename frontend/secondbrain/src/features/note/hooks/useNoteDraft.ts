@@ -10,6 +10,7 @@ import {
 } from '@/api/client/draftApi';
 import { deleteNotes as deleteNotesApi } from '@/api/client/noteApi';
 import type { NoteDraftRequest } from '@/shared/types/draft.types';
+import { isConflictError } from '@/shared/utils/typeGuards';
 
 interface UseNoteDraftOptions {
   draftId: string;
@@ -169,8 +170,7 @@ export function useNoteDraft(options: UseNoteDraftOptions): UseNoteDraftReturn {
       }
     } catch (error: unknown) {
       // 409 Conflict 처리 (이미 처리 중)
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status === 409) {
+      if (isConflictError(error)) {
         console.info('[Draft] 이미 다른 요청에서 처리 중입니다');
 
         // 잠시 대기 후 Note 목록 새로고침
