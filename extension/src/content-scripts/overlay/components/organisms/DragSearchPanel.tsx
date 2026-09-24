@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { Search, ExternalLink, Loader2, History, Trash2 } from 'lucide-react';
 import type { NoteSearchResult } from '@/types/note';
 import { useDragSearchStore } from '@/stores/dragSearchStore';
@@ -160,12 +161,12 @@ export function DragSearchPanel({
                         ? response.error
                         : 'Unknown error';
                     console.warn('[DragSearchPanel] Side panel failed:', errorMsg);
-                    window.open(`https://brainsecond.site/notes/${note.id}`, '_blank');
+                    window.open(`${env.webUrl}/notes/${note.id}`, '_blank');
                   }
                 } catch (error) {
                   console.error('[DragSearchPanel] Failed to open side panel:', error);
                   // Fallback: 웹 앱에서 열기
-                  window.open(`https://brainsecond.site/notes/${note.id}`, '_blank');
+                  window.open(`${env.webUrl}/notes/${note.id}`, '_blank');
                 }
               })();
             }}

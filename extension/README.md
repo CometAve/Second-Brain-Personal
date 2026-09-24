@@ -1,6 +1,6 @@
 # SecondBrain Chrome 확장
 
-웹페이지 저장, 드래그 검색, 노트 조회를 제공하는 Manifest V3 확장입니다. 이 작업은 의존성과 필요한 코드·검사 설정을 최신화합니다. 로컬 Compose 연결·서비스 주소와 권한 설정은 별도 `codex/local-compose` 변경을 통합한 뒤 적용합니다.
+웹페이지 저장, 드래그 검색, 노트 조회를 제공하는 Manifest V3 확장입니다. 최신 의존성과 검사 설정에 로컬 API·웹 주소 및 환경별 host permission 설정을 통합했습니다. API·데이터 서비스는 [로컬 실행 안내](../infra/local/README.md), 웹은 [웹 README](../frontend/secondbrain/README.md)를 따릅니다.
 
 ## 실행
 
@@ -16,12 +16,13 @@ pnpm dev
 ```
 
 ```dotenv
-VITE_API_BASE_URL=https://api.brainsecond.site
-VITE_KG_API_BASE_URL=https://api.brainsecond.site
+VITE_API_BASE_URL=http://localhost:8080
+VITE_KG_API_BASE_URL=http://localhost:8000
+VITE_WEB_URL=http://localhost:5173
 VITE_GOOGLE_CLIENT_ID=발급받은-Google-OAuth-클라이언트-ID
 ```
 
-API·KG 주소와 Google OAuth 클라이언트 ID는 필수입니다. 위 주소는 기존 코드에 남아 있는 서비스 연결 예시이며 현재 운영 여부를 검증하지 않았습니다. 검색·인증은 `VITE_API_BASE_URL`, 요약·관련 노트는 기존 `VITE_KG_API_BASE_URL`과 `/ai/api/v1` 경로를 사용합니다. 웹 노트 링크와 API host permission도 기존 서비스 주소를 유지합니다. localhost 기본값과 `VITE_WEB_URL`, 환경별 권한 생성은 로컬 구성 변경에 포함됩니다.
+API·KG·웹 주소는 위 localhost 값을 기본으로 사용합니다. Google 로그인에는 본인의 OAuth 클라이언트 ID가 필요합니다. 검색·인증은 `VITE_API_BASE_URL`, 요약·관련 노트는 `VITE_KG_API_BASE_URL`과 `/ai/api/v1` 경로를 사용합니다. 노트 열기·프로필의 웹 링크는 `VITE_WEB_URL`로 구성합니다. Vite 설정이 API URL의 protocol·hostname으로 Chrome host permission을 생성하며, Chrome match pattern의 규칙에 따라 포트는 포함하지 않습니다. 다른 주소를 사용하면 환경 변수 변경 후 다시 빌드합니다.
 
 `pnpm dev`는 포트 5174를 사용합니다. Chrome의 `chrome://extensions`에서 개발자 모드를 켜고 생성된 `dist/`를 압축 해제된 확장으로 로드합니다. 정적 결과는 `pnpm build`로 생성합니다. Google OAuth의 확장 ID/클라이언트 등록은 본인 개발 환경과 맞아야 합니다.
 
@@ -55,6 +56,8 @@ Node 26.10.0은 최신 Current 안정 릴리스이고 24.21.0은 LTS입니다. �
 
 ## 검증
 
+2026-09-24 master 통합 후 잠금 파일 기준 strict 설치와 타입 검사·린트·빌드를 다시 실행해 통과했습니다. 합성 storage/fetch로 API·AI 주소와 요청 본문·헤더, 웹 링크를 확인하고, 생성된 manifest의 localhost 권한과 서로 다른 두 content loader·정적 service worker 참조를 재검증했습니다.
+
 ```sh
 pnpm install --frozen-lockfile --strict-peer-dependencies
 pnpm typecheck
@@ -64,4 +67,4 @@ pnpm build
 
 아래 결과는 환경 설정 분리 전 2026-09-24 Node 26.10.0/pnpm 12.6.0에서 확인한 strict 설치, 타입검사, ESLint, Vite 8 프로덕션 빌드 기록입니다. 분리 적용 후에도 타입 검사·린트·프로덕션 빌드를 다시 실행해 모두 통과했습니다. 의존성 파일은 그대로여서 설치는 반복하지 않았습니다. lint는 **오류 0건, 기본 warning 25건**입니다. 기존 context·effect·key 관련 권장사항과 별도 CSS/주입된 CSS의 사용자 클래스 경고를 이번 의존성 작업에서 임의로 숨기지 않았습니다. Tailwind의 inline CSS 변환에는 sourcemap 미생성 경고가 남습니다.
 
-합성 Chrome storage/fetch로 API 서비스 함수의 인증 헤더·본문·응답 변환을 검사했습니다. 빌드된 두 content loader가 서로 다른 존재하는 JS 청크를 가리키는지와 background loader의 정적 모듈 import를 확인했습니다. 서로 다른 localhost API origin의 연결 검증은 로컬 구성 쪽 기록으로 분리합니다. 상세 UI, Chrome 실제 권한 처리, 실제 OAuth 계정·백엔드·LLM 연결은 이 최소 검증에 포함하지 않았습니다.
+합성 Chrome storage/fetch로 API 서비스 함수의 인증 헤더·본문·응답 변환을 검사했습니다. 빌드된 두 content loader가 서로 다른 존재하는 JS 청크를 가리키는지와 background loader의 정적 모듈 import를 확인했습니다. 서로 다른 localhost API origin과 웹 링크는 합성 요청으로 확인했으며 [로컬 실행 검증 기록](../infra/local/README.md)과 함께 참고합니다. 상세 UI, Chrome 실제 권한 처리, 실제 OAuth 계정·백엔드·LLM 연결은 이 최소 검증에 포함하지 않았습니다.

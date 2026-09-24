@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { useState } from 'react';
 import { Toolbar } from '@/content-scripts/overlay/components/molecules/Toolbar';
 import { AuthCard } from '@/content-scripts/overlay/components/molecules/AuthCard';
@@ -132,12 +133,12 @@ export function ExtensionOverlay({ isOpen, onToggle }: ExtensionOverlayProps) {
               ? response.error
               : 'Unknown error';
           console.warn('[ExtensionOverlay] Side panel failed:', errorMsg);
-          window.open(`https://brainsecond.site/notes/${noteId}`, '_blank');
+          window.open(`${env.webUrl}/notes/${noteId}`, '_blank');
         }
       } catch (error) {
         console.error('[ExtensionOverlay] Failed to open side panel:', error);
         // Fallback: 웹 앱에서 열기
-        window.open(`https://brainsecond.site/notes/${noteId}`, '_blank');
+        window.open(`${env.webUrl}/notes/${noteId}`, '_blank');
       }
     })();
   }
