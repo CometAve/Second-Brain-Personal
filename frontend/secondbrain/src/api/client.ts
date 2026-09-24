@@ -146,7 +146,7 @@ createApiClient();
 
 // fast api용 client
 export const fastApiClient = axios.create({
-  baseURL: `${env.apiBaseUrl}/ai/api/v1`,
+  baseURL: `${env.kgApiBaseUrl}/ai/api/v1`,
   timeout: 20000, // AI API는 타임아웃을 더 길게 설정
 });
 

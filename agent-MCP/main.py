@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 # 환경 변수
 API_BASE_URL = os.getenv("API_BASE_URL")
+# 기존 통합 API 주소를 사용하는 설정도 계속 지원한다.
+AI_API_BASE_URL = os.getenv("AI_API_BASE_URL") or API_BASE_URL
 API_KEY = os.getenv("API_KEY")
 
 if not API_KEY or not API_BASE_URL:
@@ -33,9 +35,11 @@ mcp = FastMCP(
 )
 
 # 검색 서비스 인스턴스
-search_service = SearchService(api_base_url=API_BASE_URL, api_key=API_KEY)
+search_service = SearchService(api_base_url=AI_API_BASE_URL, api_key=API_KEY)
 note_create_service = NoteCreateService(api_base_url=API_BASE_URL, api_key=API_KEY)
-graph_note_search_service = GraphNoteSearchService(api_base_url=API_BASE_URL, api_key=API_KEY)
+graph_note_search_service = GraphNoteSearchService(
+    api_base_url=API_BASE_URL, api_key=API_KEY, ai_api_base_url=AI_API_BASE_URL
+)
 
 # ==========================
 # MCP 도구 등록
@@ -145,6 +149,7 @@ async def graph_note_search(
 if __name__ == "__main__":
     logger.info("🚀 FastMCP 서버 시작")
     logger.info(f"📡 API URL: {API_BASE_URL}")
+    logger.info(f"📡 AI API URL: {AI_API_BASE_URL}")
     logger.info(f"🔑 API Key: {API_KEY[:10]}..." if API_KEY else "❌ API Key 없음")
 
     mcp.run(transport="stdio")

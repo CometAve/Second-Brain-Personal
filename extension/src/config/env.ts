@@ -25,8 +25,12 @@ const getEnvVar = <Key extends keyof ImportMetaEnv>(key: Key): ImportMetaEnv[Key
 };
 
 export const env = {
-  apiBaseUrl: getEnvVar('VITE_API_BASE_URL'),
-  kgApiBaseUrl: getEnvVar('VITE_KG_API_BASE_URL'),
+  apiBaseUrl: (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/+$/, ''),
+  kgApiBaseUrl: (import.meta.env.VITE_KG_API_BASE_URL || 'http://localhost:8000').replace(
+    /\/+$/,
+    '',
+  ),
+  webUrl: (import.meta.env.VITE_WEB_URL || 'http://localhost:5173').replace(/\/+$/, ''),
   googleClientId: getEnvVar('VITE_GOOGLE_CLIENT_ID'),
 } as const;
 

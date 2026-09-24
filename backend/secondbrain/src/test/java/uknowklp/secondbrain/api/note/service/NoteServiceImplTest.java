@@ -19,7 +19,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import uknowklp.secondbrain.api.note.domain.Note;
@@ -48,6 +47,9 @@ class NoteServiceImplTest {
 
 	@Mock
 	private NoteSearchService noteSearchService;
+
+	@Mock
+	private KnowledgeGraphProducerService knowledgeGraphProducerService;
 
 	private User testUser;
 	private NoteRequest validRequest;
@@ -254,22 +256,13 @@ class NoteServiceImplTest {
 	}
 
 	@Test
-	@DisplayName("노트 생성 성공 - 이미지 파일 포함 (단일 이미지)")
+	@DisplayName("노트 생성 성공 - 업로드된 단일 이미지 본문 유지")
 	void createNote_WithSingleImage_Success() {
-		// given: 단일 이미지 파일을 포함한 요청
+		// given: 이미 업로드한 이미지 URL을 본문에 포함한 JSON 요청
 		Long userId = 1L;
-		MockMultipartFile imageFile = new MockMultipartFile(
-			"images",
-			"test-image.jpg",
-			"image/jpeg",
-			"test image content".getBytes()
-		);
-		List<MultipartFile> images = new ArrayList<>();
-		images.add(imageFile);
-
 		NoteRequest requestWithImage = NoteRequest.builder()
 			.title("이미지 포함 노트")
-			.content("이미지가 포함된 노트입니다.")
+			.content("이미지가 포함된 노트입니다.\n![test-image.jpg](https://images.example.test/test-image.jpg)")
 			.build();
 
 		given(userService.findById(userId)).willReturn(Optional.of(testUser));
@@ -278,45 +271,23 @@ class NoteServiceImplTest {
 		// when: 노트 생성
 		Note createdNote = noteService.createNote(userId, requestWithImage);
 
-		// then: 이미지 마크다운이 content에 추가됨
+		// then: 전달받은 이미지 마크다운이 content에 유지됨
 		assertNotNull(createdNote.getContent());
 		assertTrue(createdNote.getContent().contains("이미지가 포함된 노트입니다."));
 		assertTrue(createdNote.getContent().contains("![test-image.jpg]"));
-		assertTrue(createdNote.getContent().contains("https://placeholder-s3-url/test-image.jpg"));
+		assertTrue(createdNote.getContent().contains("https://images.example.test/test-image.jpg"));
 		verify(noteRepository, times(1)).save(any(Note.class));
 	}
 
 	@Test
-	@DisplayName("노트 생성 성공 - 이미지 파일 포함 (다중 이미지)")
+	@DisplayName("노트 생성 성공 - 업로드된 다중 이미지 본문 유지")
 	void createNote_WithMultipleImages_Success() {
-		// given: 다중 이미지 파일을 포함한 요청
+		// given: 이미 업로드한 여러 이미지 URL을 본문에 포함한 JSON 요청
 		Long userId = 1L;
-		MockMultipartFile image1 = new MockMultipartFile(
-			"images",
-			"image1.jpg",
-			"image/jpeg",
-			"image1 content".getBytes()
-		);
-		MockMultipartFile image2 = new MockMultipartFile(
-			"images",
-			"image2.png",
-			"image/png",
-			"image2 content".getBytes()
-		);
-		MockMultipartFile image3 = new MockMultipartFile(
-			"images",
-			"image3.gif",
-			"image/gif",
-			"image3 content".getBytes()
-		);
-		List<MultipartFile> images = new ArrayList<>();
-		images.add(image1);
-		images.add(image2);
-		images.add(image3);
-
 		NoteRequest requestWithImages = NoteRequest.builder()
 			.title("다중 이미지 노트")
-			.content("여러 이미지가 포함된 노트입니다.")
+			.content("여러 이미지가 포함된 노트입니다.\n![image1.jpg](https://images.example.test/image1.jpg)"
+				+ "\n![image2.png](https://images.example.test/image2.png)\n![image3.gif](https://images.example.test/image3.gif)")
 			.build();
 
 		given(userService.findById(userId)).willReturn(Optional.of(testUser));
@@ -325,15 +296,15 @@ class NoteServiceImplTest {
 		// when: 노트 생성
 		Note createdNote = noteService.createNote(userId, requestWithImages);
 
-		// then: 모든 이미지 마크다운이 content에 추가됨
+		// then: 전달받은 모든 이미지 마크다운이 content에 유지됨
 		assertNotNull(createdNote.getContent());
 		assertTrue(createdNote.getContent().contains("여러 이미지가 포함된 노트입니다."));
 		assertTrue(createdNote.getContent().contains("![image1.jpg]"));
 		assertTrue(createdNote.getContent().contains("![image2.png]"));
 		assertTrue(createdNote.getContent().contains("![image3.gif]"));
-		assertTrue(createdNote.getContent().contains("https://placeholder-s3-url/image1.jpg"));
-		assertTrue(createdNote.getContent().contains("https://placeholder-s3-url/image2.png"));
-		assertTrue(createdNote.getContent().contains("https://placeholder-s3-url/image3.gif"));
+		assertTrue(createdNote.getContent().contains("https://images.example.test/image1.jpg"));
+		assertTrue(createdNote.getContent().contains("https://images.example.test/image2.png"));
+		assertTrue(createdNote.getContent().contains("https://images.example.test/image3.gif"));
 		verify(noteRepository, times(1)).save(any(Note.class));
 	}
 
@@ -657,24 +628,15 @@ class NoteServiceImplTest {
 	}
 
 	@Test
-	@DisplayName("노트 수정 성공 - 이미지 포함")
+	@DisplayName("노트 수정 성공 - 업로드된 이미지 본문 유지")
 	void updateNote_WithImages_Success() {
 		// given
 		Long noteId = 1L;
 		Long userId = 1L;
 
-		MockMultipartFile imageFile = new MockMultipartFile(
-			"images",
-			"updated-image.jpg",
-			"image/jpeg",
-			"updated image content".getBytes()
-		);
-		List<MultipartFile> images = new ArrayList<>();
-		images.add(imageFile);
-
 		NoteRequest updateRequest = NoteRequest.builder()
 			.title("이미지 수정")
-			.content("이미지가 추가된 내용")
+			.content("이미지가 추가된 내용\n![updated-image.jpg](https://images.example.test/updated-image.jpg)")
 			.build();
 
 		Note existingNote = Note.builder()

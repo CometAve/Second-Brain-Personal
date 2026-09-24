@@ -25,7 +25,14 @@ class EmbeddingService:
             logger.debug("✅ OpenAI 클라이언트 (Base API)")
 
         self.model = settings.openai_model
-        self.encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        # 서버 시작과 health 확인에는 외부 tokenizer 다운로드가 필요하지 않다.
+        self._encoding = None
+
+    @property
+    def encoding(self):
+        if self._encoding is None:
+            self._encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        return self._encoding
 
     def count_tokens(self, text: str) -> int:
         """

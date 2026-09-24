@@ -10,6 +10,8 @@
 interface ImportMetaEnv {
   /** API 서버 기본 URL */
   readonly VITE_API_BASE_URL: string;
+  /** Knowledge Graph API 서버 기본 URL */
+  readonly VITE_KG_API_BASE_URL: string;
   /** OAuth2 Google 로그인 URL */
   readonly VITE_OAUTH2_LOGIN_URL: string;
 

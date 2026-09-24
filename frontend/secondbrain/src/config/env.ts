@@ -16,8 +16,9 @@
  * - 개발자 친화적인 에러 메시지를 위한 예시 값
  */
 const ENV_HINTS: Partial<Record<keyof ImportMetaEnv, string>> = {
-  VITE_API_BASE_URL: 'https://api.example.com',
-  VITE_OAUTH2_LOGIN_URL: 'https://api.example.com/oauth2/authorization/google',
+  VITE_API_BASE_URL: 'http://localhost:8080',
+  VITE_KG_API_BASE_URL: 'http://localhost:8000',
+  VITE_OAUTH2_LOGIN_URL: 'http://localhost:8080/oauth2/authorization/google',
 };
 
 /**
@@ -55,6 +56,8 @@ const getEnvVar = <Key extends keyof ImportMetaEnv>(key: Key): ImportMetaEnv[Key
 export const env = {
   /** API 서버 기본 URL */
   apiBaseUrl: getEnvVar('VITE_API_BASE_URL'),
+  /** Knowledge Graph API 서버 기본 URL */
+  kgApiBaseUrl: getEnvVar('VITE_KG_API_BASE_URL'),
   /** OAuth2 Google 로그인 URL */
   oauth2LoginUrl: getEnvVar('VITE_OAUTH2_LOGIN_URL'),
 } as const;

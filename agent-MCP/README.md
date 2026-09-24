@@ -8,8 +8,6 @@ Second Brain의 노트를 검색·생성하고 연결된 노트를 조회하는 
 | `note_create` | 제목과 Markdown 본문으로 노트 생성 |
 | `graph_note_search` | 특정 노트와 연결된 주변 노트 조회 |
 
-이 작업 공간은 Python·FastMCP 의존성 최신화를 담당합니다. Nginx 제거에 따른 백엔드·AI 주소 분리와 라우팅 테스트는 후속 `codex/local-compose` 변경이며, 최신화 변경을 통합한 뒤 실행합니다.
-
 ## 설치와 실행
 
 Python **3.14.7**, uv **0.12.18**을 사용합니다. `.python-version`과 `pyproject.toml`의 uv 버전 검사가 실행 기준을 지정합니다.
@@ -24,10 +22,21 @@ cp .env-example .env
 
 ```dotenv
 API_KEY=your-api-key
-API_BASE_URL=https://api.brainsecond.site/
+API_BASE_URL=http://localhost:8080
+AI_API_BASE_URL=http://localhost:8000
 ```
 
-현재 작업 공간의 서비스 코드는 기존 단일 API 주소를 사용합니다. 실제 사용할 통합 API 주소로 설정하고 끝의 `/`를 포함합니다. localhost의 백엔드·AI 포트를 각각 사용하는 설정은 `codex/local-compose`에서 별도로 이전합니다.
+`API_BASE_URL`은 Spring 백엔드, `AI_API_BASE_URL`은 지식 그래프 서비스의 주소입니다. `/api`나 `/ai/api/v1` 접미사를 넣지 않습니다. 주소 끝의 `/`는 있어도 없어도 됩니다. 기존 단일 API 주소를 계속 쓰는 경우 `AI_API_BASE_URL`을 생략하면 `API_BASE_URL`을 함께 사용합니다.
+
+실제 호출 경로는 다음과 같습니다. 로컬 서버 준비는 [루트 실행 안내](../infra/local/README.md)를 따릅니다.
+
+| 용도 | 서비스와 경로 |
+|---|---|
+| 검색 | AI `POST /ai/api/v1/agents/mcp-search` |
+| 그래프 탐색 | AI `GET /ai/api/v1/graph/neighbors/{note_id}` |
+| API 키 검증 | 백엔드 `POST /api/apikey/validate` |
+| 노트 생성 | 백엔드 `POST /api/mcp/notes` |
+| 노트 상세 | 백엔드 `GET /api/mcp/notes/{note_id}` |
 
 ```bash
 uv run --locked python main.py
@@ -87,13 +96,17 @@ FastMCP 4는 MCP Python SDK 2와 Pydantic 2.12 이상을 사용합니다. `uv.lo
 ```bash
 uv lock --check
 uv sync --locked
+uv run --locked python -m unittest discover -s tests -v
 ```
 
-주소 분리 테스트는 `codex/local-compose`에 보관하며 최신화 변경을 통합한 뒤 실행합니다. 현재 작업 공간에 존재하지 않는 테스트를 검증 명령에 포함하지 않습니다.
+라우팅 테스트는 실제 `.env`를 읽지 않고 합성 키와 HTTPX `MockTransport`를 사용합니다. MCP 클라이언트에서 도구를 호출하여 AI 검색·그래프 요청과 백엔드 인증·노트 요청의 주소·헤더를 확인하고, 기존 단일 API 주소 설정도 검사합니다. 실제 API 키나 외부 API 호출은 필요하지 않습니다.
+
+2026-09-24 master 통합 후에도 Python 3.14.7·FastMCP 4.0.8의 기존 잠금 의존성 가상환경에서 현재 작업 트리의 라우팅 테스트 3개를 다시 실행해 통과했습니다. 실패·오류·건너뜀 및 소켓 연결 시도는 없었습니다. 위 명령으로 현재 작업 트리의 라우팅을 다시 확인할 수 있습니다.
 
 Python 3.14.7에서 Mac ARM·Linux ARM 의존성 해석 및 Mac의 별도 가상환경 설치를 확인했습니다. 별도 프로세스의 stdio 연결에서도 FastMCP 클라이언트의 `auto`·`legacy` 모드 각각 도구 목록과 외부 요청 없는 입력 검증 호출을 확인했습니다. 실제 사용자의 MCP 클라이언트 연결과 개인 데이터에 대한 검색 품질은 이 검사에 포함되지 않습니다.
 
 ## 알려진 기존 제약
 
 - `graph_note_search`의 설명에는 `depth` 기본값이 1이라고 되어 있지만 현재 도구 입력 스키마에는 필수 항목으로 등록됩니다. 현재는 `depth`를 명시해야 합니다. 기본값 누락은 버전 변경과 별개인 기존 기능 결함으로 남겨 두었습니다.
+- 루트 Compose의 합성 AI 키로는 서버 기동만 확인할 수 있습니다. 실제 검색·임베딩·노트 이벤트 처리는 유효한 모델 API 설정이 필요합니다.
 - stdio 로그와 오류 메시지는 MCP 클라이언트의 서버 로그에서 확인합니다. 인증 오류는 백엔드 API 키와 서버 주소를 확인합니다.

@@ -10,7 +10,7 @@
     "128": "assets/icon-128.png"
   },
   "permissions": ["identity", "storage", "tabs", "activeTab", "scripting", "sidePanel"],
-  "host_permissions": ["https://api.brainsecond.site/*"],
+  "host_permissions": ["http://localhost/*"],
   "side_panel": {
     "default_path": "sidepanel.html"
   },

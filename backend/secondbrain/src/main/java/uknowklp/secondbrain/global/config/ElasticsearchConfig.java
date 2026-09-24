@@ -1,12 +1,6 @@
 package uknowklp.secondbrain.global.config;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import javax.net.ssl.SSLContext;
 
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.ssl.SSLContextBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.client.ClientConfiguration;
@@ -33,8 +27,8 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 		if (StringUtils.hasText(username) && StringUtils.hasText(password)) {
 			return ClientConfiguration.builder()
 				.connectedTo(uris)
-				// usingSsl의 두 번째 인자로 HostnameVerifier를 전달하여 검증을 비활성화
-				.usingSsl(createUnsafeSslContext(), (hostname, session) -> true)
+				// 원격 TLS는 JVM trust store의 인증서와 호스트 이름을 검증합니다.
+				.usingSsl()
 				.withBasicAuth(username, password)
 				.build();
 		}
@@ -45,17 +39,4 @@ public class ElasticsearchConfig extends ElasticsearchConfiguration {
 			.build();
 	}
 
-	/**
-	 * todo: (삭제 예정) 개발 환경을 위해 모든 인증서를 신뢰하는 SSLContext를 생성
-	 * @return SSLContext
-	 */
-	private SSLContext createUnsafeSslContext() {
-		try {
-			return SSLContextBuilder.create()
-				.loadTrustMaterial(new TrustAllStrategy())
-				.build();
-		} catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-			throw new RuntimeException("Failed to create SSL context for Elasticsearch", e);
-		}
-	}
 }
