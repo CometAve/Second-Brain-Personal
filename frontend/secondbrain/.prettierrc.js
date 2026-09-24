@@ -20,6 +20,7 @@ const config = {
 
   // 플러그인 설정
   plugins: ['prettier-plugin-tailwindcss'], // TailwindCSS 클래스 자동 정렬
+  tailwindStylesheet: './src/index.css',
 };
 
 export default config;

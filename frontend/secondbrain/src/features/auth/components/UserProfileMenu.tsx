@@ -39,12 +39,12 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
       <GlassElement
         as="div"
         className={`overflow-hidden transition-all duration-300 ease-in-out motion-reduce:transition-none ${
-          view === 'menu' ? 'w-[320px]' : 'w-[480px]'
+          view === 'menu' ? 'w-80' : 'w-120'
         }`}
       >
         {view === 'menu' ? (
           // 메뉴 상태
-          <div role="menu" className="w-full space-y-1 p-2">
+          <div role="menu" className="flex w-full flex-col gap-1 p-2">
             {/* 사용자 정보 */}
             <div className="px-4 py-2">
               <p className="text-sm font-medium text-white">{user.name}</p>
@@ -71,7 +71,7 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
           </div>
         ) : (
           // API Key 관리 상태
-          <div className="w-full space-y-3 p-4">
+          <div className="flex w-full flex-col gap-3 p-4">
             {/* 뒤로 가기 버튼 */}
             <button
               onClick={(e) => {
@@ -79,7 +79,7 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
                 e.stopPropagation();
                 setView('menu');
               }}
-              className="flex items-center gap-2 rounded px-2 py-1 text-sm text-white/80 transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="flex items-center gap-2 self-start rounded-sm px-2 py-1 text-sm text-white/80 transition-colors hover:text-white focus:ring-2 focus:ring-white/20 focus:outline-hidden"
             >
               <ArrowLeft className="size-4" />
               <span>뒤로</span>

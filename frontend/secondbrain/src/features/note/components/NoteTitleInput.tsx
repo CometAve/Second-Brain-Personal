@@ -36,7 +36,7 @@ export const NoteTitleInput = forwardRef<HTMLTextAreaElement, NoteTitleInputProp
         onChange={handleChange}
         placeholder={placeholder}
         rows={1}
-        className="mb-6 w-full resize-none overflow-hidden border-0 bg-transparent font-bold text-white outline-none ring-0 placeholder:text-white/30 focus:border-0 focus:outline-none focus:ring-0"
+        className="mb-6 w-full resize-none overflow-hidden border-0 bg-transparent font-bold text-white ring-0 outline-hidden placeholder:text-white/30 focus:border-0 focus:ring-0 focus:outline-hidden"
         style={{
           fontSize: '42px',
           lineHeight: '1.2',

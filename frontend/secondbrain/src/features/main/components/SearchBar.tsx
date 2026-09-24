@@ -44,7 +44,7 @@ export function SearchBar() {
         aria-label="검색"
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
-        className="w-[300px] border-b-2 border-white/60 bg-transparent pb-2 text-white outline-none transition-colors placeholder:text-white/50 focus:border-white"
+        className="w-75 border-b-2 border-white/60 bg-transparent pb-2 text-white outline-hidden transition-colors placeholder:text-white/50 focus:border-white"
       />
     </div>
   );

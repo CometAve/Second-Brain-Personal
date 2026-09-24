@@ -116,7 +116,7 @@ export function PanelHeader({ allNoteIds }: PanelHeaderProps) {
                   }`}
                 >
                   {(isSelectAllMode || isPartialSelection) && (
-                    <Check className="size-4 stroke-[3] text-green-500" />
+                    <Check className="size-4 stroke-3 text-green-500" />
                   )}
                 </div>
                 <span className="font-medium">{getSelectButtonText()}</span>

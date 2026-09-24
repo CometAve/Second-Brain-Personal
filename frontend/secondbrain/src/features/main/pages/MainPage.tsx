@@ -85,7 +85,7 @@ export function MainPage() {
         </ErrorBoundary>
       </MainLayout>
       <div
-        className={`absolute left-10 top-10 z-40 h-[calc(100%-5rem)] w-[27%] bg-transparent transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
+        className={`absolute top-10 left-10 z-40 h-[calc(100%-5rem)] w-[27%] bg-transparent transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none ${
           isOpen
             ? 'pointer-events-auto translate-x-0 opacity-100'
             : 'pointer-events-none -translate-x-full opacity-0'

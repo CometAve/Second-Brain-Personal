@@ -116,7 +116,7 @@ function DraftEditorInternal({ draftId, isOpen, onClose }: DraftEditorProps) {
       />
 
       {/* 중앙 컨텐츠: Title + Editor (전체 스크롤) */}
-      <div className="custom-scrollbar absolute inset-x-0 bottom-0 top-32 flex flex-col items-center gap-8 overflow-y-auto px-24">
+      <div className="custom-scrollbar absolute inset-x-0 top-32 bottom-0 flex flex-col items-center gap-8 overflow-y-auto px-24">
         <div
           className={`flex w-full max-w-4xl flex-col transition-all duration-500 ease-out ${
             isOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'

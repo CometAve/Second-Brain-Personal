@@ -57,7 +57,7 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
     >
       <div className="relative h-full">
         {/* 상단 좌측: 전체화면 토글 버튼 */}
-        <div className="absolute left-10 top-10 z-10">
+        <div className="absolute top-10 left-10 z-10">
           <GlassElement
             as="button"
             icon={isFullscreen ? <CompressIcon /> : <ExpandIcon />}
@@ -67,7 +67,7 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
         </div>
 
         {/* 상단 우측: 토글 스위치 + 삭제 버튼 */}
-        <div className="absolute right-10 top-10 z-10 flex items-center gap-3">
+        <div className="absolute top-10 right-10 z-10 flex items-center gap-3">
           <ToggleSwitch checked={isPublic} onChange={handleTogglePublic} />
           <GlassElement
             as="button"

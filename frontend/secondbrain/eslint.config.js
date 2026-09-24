@@ -1,8 +1,8 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import react from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
+import { reactRefresh } from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import tailwindcss from 'eslint-plugin-tailwindcss';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
@@ -30,11 +30,9 @@ export default defineConfig([
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
-      react.configs.flat.recommended,
-      react.configs.flat['jsx-runtime'],
-      reactHooks.configs['recommended-latest'],
-      reactRefresh.configs.vite,
-      ...tailwindcss.configs['flat/recommended'],
+      eslintReact.configs['recommended-typescript'],
+      reactRefresh.configs.vite(),
+      tailwindcss.configs.recommended,
     ],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -45,18 +43,37 @@ export default defineConfig([
       },
     },
     plugins: {
+      'react-hooks': reactHooks,
       'no-relative-import-paths': noRelativeImportPaths,
     },
     settings: {
-      react: {
+      'react-x': {
         version: 'detect',
       },
       tailwindcss: {
-        callees: ['cn', 'cva'],
-        config: 'tailwind.config.js',
+        functions: ['cn', 'cva'],
+        cssConfigPath: './src/index.css',
       },
     },
     rules: {
+      // 기존 Hooks 검사 범위를 유지한다. Compiler 규칙 도입은 별도 작업이다.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      // 컴포넌트에서 별도로 import하거나 인라인으로 정의하는 실제 CSS 클래스.
+      'tailwindcss/no-custom-classname': [
+        'warn',
+        {
+          whitelist: [
+            'custom-scrollbar',
+            'note-editor',
+            'glass-border',
+            'logo-spinner-container',
+            'logo-spinner',
+          ],
+        },
+      ],
+
       // 절대 경로 강제 규칙 (같은 폴더 내에서도 절대 경로 사용)
       'no-relative-import-paths/no-relative-import-paths': [
         'error',

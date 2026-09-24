@@ -38,7 +38,7 @@ export function SidePeekOverlay({ isOpen, onClose, children, mode }: SidePeekOve
     <>
       {/* 배경 오버레이 */}
       <div
-        className={`fixed inset-0 z-[100] bg-transparent transition-opacity duration-300 ${
+        className={`fixed inset-0 z-100 bg-transparent transition-opacity duration-300 ${
           isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={onClose}
@@ -47,7 +47,7 @@ export function SidePeekOverlay({ isOpen, onClose, children, mode }: SidePeekOve
 
       {/* Side Peek 패널 */}
       <div
-        className={`fixed right-0 top-0 z-[110] h-full border-l-2 border-white/30 backdrop-blur-xl transition-all duration-500 ease-out ${
+        className={`fixed top-0 right-0 z-110 h-full border-l-2 border-white/30 backdrop-blur-xl transition-all duration-500 ease-out ${
           isOpen
             ? 'pointer-events-auto translate-x-0 animate-slide-in-right opacity-100'
             : 'pointer-events-none translate-x-full opacity-0'
@@ -59,7 +59,7 @@ export function SidePeekOverlay({ isOpen, onClose, children, mode }: SidePeekOve
         {/* Resize Handle - side-peek 모드에서만 표시 */}
         {mode === 'side-peek' && (
           <div
-            className="absolute left-0 top-0 z-[120] h-full w-2 cursor-ew-resize transition-colors hover:bg-white/40 active:bg-white/60"
+            className="absolute top-0 left-0 z-120 h-full w-2 cursor-ew-resize transition-colors hover:bg-white/40 active:bg-white/60"
             onMouseDown={(e) => {
               e.preventDefault();
 

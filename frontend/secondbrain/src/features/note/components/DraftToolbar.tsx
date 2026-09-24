@@ -50,7 +50,7 @@ export function DraftToolbar({
     <TooltipProvider>
       {mode === 'full-screen' ? (
         // 전체화면 모드: 우측 상단에 3개 버튼
-        <div className="fixed right-10 top-10 z-10 flex gap-3">
+        <div className="fixed top-10 right-10 z-10 flex gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={onBack} className={buttonClass} aria-label="닫기">
@@ -97,7 +97,7 @@ export function DraftToolbar({
       ) : (
         // 부분화면 모드: 좌측 Expand (전체화면), 우측 Trash2 (삭제)
         <>
-          <div className="fixed left-10 top-10 z-10">
+          <div className="fixed top-10 left-10 z-10">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button onClick={onToggleMode} className={buttonClass} aria-label="전체화면">
@@ -108,7 +108,7 @@ export function DraftToolbar({
             </Tooltip>
           </div>
 
-          <div className="fixed right-10 top-10 z-10">
+          <div className="fixed top-10 right-10 z-10">
             <AlertDialog>
               <Tooltip>
                 <TooltipTrigger asChild>

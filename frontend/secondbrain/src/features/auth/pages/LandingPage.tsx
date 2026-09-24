@@ -27,9 +27,9 @@ export function LandingPage() {
         </div>
 
         {/* 메인 컨텐츠 */}
-        <div className="absolute left-10 top-10 z-10">
+        <div className="absolute top-10 left-10 z-10">
           {/* 헤더 섹션 */}
-          <div className="mb-12 space-y-4">
+          <div className="mb-12 flex flex-col gap-4">
             <h1 className="text-9xl font-bold tracking-tight text-white">Second Brain</h1>
             <p
               className="text-2xl font-medium text-[#7F86C1]"
@@ -46,7 +46,7 @@ export function LandingPage() {
         </div>
 
         {/* 하단 장식 */}
-        <div className="absolute inset-x-0 bottom-0 z-0 h-32 bg-gradient-to-t from-black to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 z-0 h-32 bg-linear-to-t/srgb from-black to-transparent" />
       </div>
     </LandingLayout>
   );

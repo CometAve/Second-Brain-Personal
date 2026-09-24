@@ -52,7 +52,7 @@ export function SearchPanel() {
       <div className="border-b border-white/75" />
       <div
         data-scroll-container="true"
-        className="m-0 flex flex-1 flex-col overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="m-0 flex flex-1 scrollbar-none flex-col overflow-y-auto [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {mode === 'recent' && <NoteList type="recent" recentQuery={recentNotesQuery} />}
         {mode === 'search' && <NoteList type="search" searchQuery={searchNotesQuery} />}

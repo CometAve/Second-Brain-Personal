@@ -43,7 +43,7 @@ export function Dropdown({
   return (
     <div
       ref={containerRef}
-      className={`absolute z-[60] ${positionClasses[position]} transition-all duration-200 ease-out motion-reduce:transition-none ${
+      className={`absolute z-60 ${positionClasses[position]} transition-all duration-200 ease-out motion-reduce:transition-none ${
         isOpen
           ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
           : 'pointer-events-none -translate-y-2 scale-95 opacity-0'

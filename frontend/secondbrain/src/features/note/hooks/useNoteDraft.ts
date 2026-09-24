@@ -201,7 +201,7 @@ export function useNoteDraft(options: UseNoteDraftOptions): UseNoteDraftReturn {
 
   // beforeunload: 페이지 이탈 시 자동 저장 (useEffect 제거)
   // useRef로 핸들러 저장하여 최신 값 참조 보장
-  const handleBeforeUnloadRef = useRef<() => void>();
+  const handleBeforeUnloadRef = useRef<(() => void) | undefined>(undefined);
 
   handleBeforeUnloadRef.current = () => {
     // DB 저장 중이면 sendBeacon 차단

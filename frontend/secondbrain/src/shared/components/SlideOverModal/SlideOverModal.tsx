@@ -54,7 +54,7 @@ export function SlideOverModal({
   const position = direction === 'right' ? 'right-0' : 'left-0';
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-end">
+    <div className="fixed inset-0 z-60 flex items-center justify-end">
       {/* Modal Content */}
       <div
         className={`relative h-full transition-transform duration-300 ease-out motion-reduce:transition-none ${position} ${isOpen ? slideDirection : initialPosition}`}

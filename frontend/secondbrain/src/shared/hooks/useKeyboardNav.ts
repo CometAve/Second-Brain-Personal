@@ -14,7 +14,7 @@ interface UseKeyboardNavOptions {
   /**
    * 메뉴 컨텐츠 ref
    */
-  contentRef: React.RefObject<HTMLElement>;
+  contentRef: React.RefObject<HTMLElement | null>;
 
   /**
    * 메뉴 아이템 선택자 (기본: '[role="menuitem"]')

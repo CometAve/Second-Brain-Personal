@@ -45,7 +45,7 @@ export function LogoutButton({
       onClick={handleLogout}
       disabled={isPending}
       role={variant === 'menu-item' ? 'menuitem' : undefined}
-      className={`rounded font-medium focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]}`}
+      className={`rounded-sm font-medium focus:ring-2 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]}`}
     >
       {variant === 'menu-item' && icon && <span className="shrink-0">{icon}</span>}
       <span>{isPending ? '로그아웃 중...' : '로그아웃'}</span>

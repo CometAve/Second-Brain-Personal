@@ -39,7 +39,7 @@ export function ReminderToggleMenuItem() {
     <div
       role="menuitem"
       tabIndex={0}
-      className="flex w-full cursor-pointer items-center justify-between rounded px-4 py-2.5 text-left text-sm text-white transition-colors duration-150 ease-in-out hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 motion-reduce:transition-none"
+      className="flex w-full cursor-pointer items-center justify-between rounded-sm px-4 py-2.5 text-left text-sm text-white transition-colors duration-150 ease-in-out hover:bg-white/10 focus:ring-2 focus:ring-white/20 focus:outline-hidden motion-reduce:transition-none"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >

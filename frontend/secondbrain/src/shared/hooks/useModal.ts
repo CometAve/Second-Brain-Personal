@@ -8,8 +8,8 @@ export interface UseModalOptions {
 }
 
 export interface UseModalReturn {
-  containerRef: React.RefObject<HTMLDivElement>;
-  contentRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  contentRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /**

@@ -60,7 +60,7 @@ export const Graph = () => {
   const { data: graphData, isLoading, isError } = useGraphVisualization();
   const highlightedNodeIds = useSearchPanelStore((state) => state.highlightedNodeIds);
   const isPaused = useGraphStore((state) => state.isPaused);
-  const fgRef = useRef<ForceGraphMethods<GraphNode, GraphLink>>();
+  const fgRef = useRef<ForceGraphMethods<GraphNode, GraphLink> | undefined>(undefined);
 
   // D3 force 설정
   useEffect(() => {
@@ -137,7 +137,7 @@ export const Graph = () => {
         linkDirectionalParticleWidth={calculateParticleWidth}
         linkDirectionalParticles={0}
         backgroundColor="#10131A"
-        onNodeClick={(node) => handleNodeClick(node as GraphNode)}
+        onNodeClick={(node) => handleNodeClick(node)}
         showNavInfo={false}
         d3AlphaDecay={0.05}
         d3VelocityDecay={0.5}

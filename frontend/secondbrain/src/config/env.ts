@@ -36,9 +36,7 @@ const getEnvVar = <Key extends keyof ImportMetaEnv>(key: Key): ImportMetaEnv[Key
         `💡 Please check your .env file and ensure ${key} is defined.`,
     );
   }
-  // ESLint: import.meta.env의 값은 안전하게 타입 단언 가능
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  return value as ImportMetaEnv[Key];
+  return value;
 };
 
 /**
