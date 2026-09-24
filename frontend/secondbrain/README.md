@@ -19,17 +19,18 @@ pnpm install --frozen-lockfile --strict-peer-dependencies
 `.env`에 사용하는 API 게이트웨이와 OAuth 주소를 지정합니다. Vite 환경 변수는 브라우저 번들에 포함되므로 비밀 키를 넣지 않습니다.
 
 ```dotenv
-VITE_API_BASE_URL=https://api.example.com
-VITE_OAUTH2_LOGIN_URL=https://api.example.com/oauth2/authorization/google
+VITE_API_BASE_URL=http://localhost:8080
+VITE_KG_API_BASE_URL=http://localhost:8000
+VITE_OAUTH2_LOGIN_URL=http://localhost:8080/oauth2/authorization/google
 ```
 
 ```sh
-pnpm dev
+pnpm dev --host localhost --port 5173 --strictPort
 ```
 
-이 작업은 의존성 최신화와 필요한 코드·검사 설정 이전을 포함합니다. 일반 API와 AI API는 기존 `VITE_API_BASE_URL`을 공유하며 AI 경로 `/ai/api/v1`을 유지합니다. localhost 포트·AI origin 분리·Compose 및 배포 정리는 별도 `codex/local-compose` 변경을 통합한 뒤 적용합니다. 인증·조회·저장에는 실제 백엔드가 필요합니다.
+일반 API는 `http://localhost:8080/api/...`, AI API는 `http://localhost:8000/ai/api/v1/...`에 직접 연결합니다. `VITE_KG_API_BASE_URL`로 AI origin을 별도로 지정하며 KG 서버의 `/ai` 접두사는 유지합니다. 웹은 `http://localhost:5173`에서 실행합니다. 인증·조회·저장에는 실제 백엔드가 필요하며 Google 로그인에는 별도 OAuth 설정이 필요합니다.
 
-기존 `Dockerfile`은 이 작업의 검증 대상이 아닙니다. 최신 컨테이너 실행 구성은 의존성 변경을 통합한 뒤 `codex/local-compose` 쪽 로컬 실행 안내를 따릅니다.
+웹 배포용 Dockerfile은 제거했습니다. 백엔드·AI·데이터 서비스의 컨테이너 실행과 자원 제한은 [로컬 실행 안내](../../infra/local/README.md)를 따릅니다.
 
 ## 의존성 선택과 이전
 
@@ -66,6 +67,8 @@ pnpm 12의 기본 최소 발행 기간은 1,440분이며 기본 non-strict 모�
 기존 pnpm 10 잠금 파일에 대한 첫 정책 검증은 `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`으로 실패했습니다. 최신 조합을 pnpm 12에서 다시 해석해 잠금 파일을 생성한 뒤 frozen 설치를 확인했습니다. `onlyBuiltDependencies`는 pnpm 12의 `allowBuilds`로 이전했고, 기존에 허용된 `esbuild`만 허용합니다. [빌드 정책](https://pnpm.io/settings/build)
 
 ## 검증
+
+2026-09-24 master 통합 후 잠금 파일 기준 strict 설치와 타입 검사·린트·빌드를 다시 실행해 통과했습니다. 합성 Axios adapter로 일반 API는 `localhost:8080`, AI API는 `localhost:8000/ai/api/v1`을 사용하고 각 인증 헤더를 유지하는지 확인했습니다. 이 검사는 실제 서버·브라우저 UI 동작 검증을 포함하지 않습니다.
 
 ```sh
 pnpm install --frozen-lockfile --strict-peer-dependencies
