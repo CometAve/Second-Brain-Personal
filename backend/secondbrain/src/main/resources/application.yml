@@ -3,7 +3,7 @@ spring:
     name: SecondBrain
 
   profiles:
-    active: local
+    default: local
 
   datasource:
     url: ${POSTGRES_DB_URL}
@@ -25,7 +25,7 @@ spring:
     password: ${ELASTICSEARCH_PASSWORD}
 
   neo4j:
-    uri: ${NEO4J_URI:bolt+s://brainsecond.site:7687}
+    uri: ${NEO4J_URI}
     authentication:
       username: ${NEO4J_USERNAME}
       password: ${NEO4J_PASSWORD}
@@ -92,8 +92,7 @@ security:
     cookie:
       secure: ${JWT_COOKIE_SECURE} # HTTPS 환경에서 쿠키 보안 설정
   cors:
-    allowed-origins:
-      - ${CORS_ALLOWED_ORIGIN:*}
+    allowed-origins: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
 
 swagger:
   url: ${BASE_URL}
@@ -118,7 +117,7 @@ clova:
   voice:
     client-id: ${CLOVA_CLIENT_ID}
     client-secret: ${CLOVA_CLIENT_SECRET}
-    api-url: https://naveropenapi.apigw.ntruss.com/tts-premium/v1/tts
+    api-url: ${CLOVA_API_URL:https://naveropenapi.apigw.ntruss.com/tts-premium/v1/tts}
     default-speaker: nara
     default-volume: 0
     default-speed: 0
