@@ -47,7 +47,7 @@ public class AuthorizationCodeService {
 
 		AuthCodeData data = new AuthCodeData(userId, email, System.currentTimeMillis());
 
-		// RedisTemplate이 GenericJackson2JsonRedisSerializer를 사용하므로 객체를 직접 저장
+		// RedisTemplate이 GenericJacksonJsonRedisSerializer를 사용하므로 객체를 직접 저장
 		redisTemplate.opsForValue().set(key, data, Duration.ofSeconds(CODE_TTL_SECONDS));
 		log.debug("Authorization code generated and stored. UserId: {}, Code: {}, TTL: {}s",
 			userId, code, CODE_TTL_SECONDS);
@@ -66,7 +66,7 @@ public class AuthorizationCodeService {
 		String key = AUTH_CODE_PREFIX + code;
 
 		// Redis에서 코드 조회 및 즉시 삭제 (atomic operation)
-		// RedisTemplate의 GenericJackson2JsonRedisSerializer가 자동으로 역직렬화
+		// RedisTemplate의 GenericJacksonJsonRedisSerializer가 자동으로 역직렬화
 		Object value = redisTemplate.opsForValue().getAndDelete(key);
 
 		if (value == null) {

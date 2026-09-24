@@ -70,14 +70,6 @@ spring:
       s3:
         bucket: ${BUCKET_NAME}
 
-  ai:
-    openai:
-      api-key: ${GMS_API_KEY}
-      base-url: ${GMS_OPENAI_BASE_URL}
-      embedding:
-        options:
-          model: ${GMS_EMBEDDING_MODEL}
-
 server:
   port: 8080
 

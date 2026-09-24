@@ -1,14 +1,19 @@
 package uknowklp.secondbrain.global.config;
 
+import java.util.Collection;
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import uknowklp.secondbrain.global.security.oauth2.dto.AuthCodeData;
 
 import uknowklp.secondbrain.api.note.domain.NoteDraft;
 
@@ -19,11 +24,11 @@ import uknowklp.secondbrain.api.note.domain.NoteDraft;
  *
  * Serialization 전략:
  * - Key: StringRedisSerializer (사람이 읽기 쉬운 문자열)
- * - Value: GenericJackson2JsonRedisSerializer (JSON 직렬화, 타입 정보 포함)
+ * - Value: GenericJacksonJsonRedisSerializer (JSON 직렬화, 타입 정보 포함)
  *
  * Spring Data Redis Best Practices:
  * - RedisConnectionFactory는 Spring Boot가 application.yml 설정을 기반으로 자동 생성
- * - GenericJackson2JsonRedisSerializer를 사용하여 다양한 타입(String, Map, etc.) 처리
+ * - GenericJacksonJsonRedisSerializer를 사용하여 다양한 타입(String, Map, etc.) 처리
  * - 타입 특화 RedisTemplate은 성능 최적화와 타입 안정성 제공
  * - afterPropertiesSet()으로 초기화 보장
  *
@@ -55,9 +60,17 @@ public class RedisConfig {
 		template.setHashKeySerializer(stringSerializer);
 
 		// Value Serializer: JSON으로 직렬화
-		// GenericJackson2JsonRedisSerializer는 타입 정보(@class)를 포함하여
+		// GenericJacksonJsonRedisSerializer는 타입 정보(@class)를 포함하여
 		// 다양한 타입의 객체를 안전하게 직렬화/역직렬화할 수 있습니다.
-		GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
+		GenericJacksonJsonRedisSerializer jsonSerializer = GenericJacksonJsonRedisSerializer.builder()
+			.enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
+				.allowIfSubType(AuthCodeData.class)
+				.allowIfSubType(Number.class)
+				.allowIfSubType(Map.class)
+				.allowIfSubType(Collection.class)
+				.build())
+			.typePropertyName("@class")
+			.build();
 		template.setValueSerializer(jsonSerializer);
 		template.setHashValueSerializer(jsonSerializer);
 
@@ -72,8 +85,8 @@ public class RedisConfig {
 	 *
 	 * 성능 최적화 및 타입 안정성을 위한 전용 템플릿:
 	 * - NoteDraft 객체를 직접 반환하여 불필요한 타입 변환 제거
-	 * - Jackson2JsonRedisSerializer로 NoteDraft 타입에 최적화된 직렬화
-	 * - GenericJackson2JsonRedisSerializer보다 성능 우수
+	 * - JacksonJsonRedisSerializer로 NoteDraft 타입에 최적화된 직렬화
+	 * - GenericJacksonJsonRedisSerializer보다 성능 우수
 	 * - ObjectMapper.convertValue() 변환 과정 불필요
 	 *
 	 * LocalDateTime 직렬화:
@@ -91,7 +104,7 @@ public class RedisConfig {
 	 * - NoteDraftAutoSaveService의 자동 저장 스케줄러
 	 *
 	 * @param connectionFactory Spring Boot가 자동 생성한 RedisConnectionFactory
-	 * @param objectMapper      JacksonConfig에서 생성한 공통 ObjectMapper Bean
+	 * @param objectMapper      JacksonConfig에서 생성한 공통 JsonMapper Bean
 	 * @return NoteDraft 타입 특화 RedisTemplate 인스턴스
 	 * @see <a href="https://docs.spring.io/spring-data/redis/docs/current/reference/html/#redis:serializer">Redis Serializers</a>
 	 */
@@ -111,8 +124,8 @@ public class RedisConfig {
 		// Value Serializer: NoteDraft 타입 특화 Jackson 직렬화
 		// 주입받은 ObjectMapper 사용 (코드 중복 제거)
 		// @class 타입 정보 없이 직렬화 (프론트엔드 호환성)
-		Jackson2JsonRedisSerializer<NoteDraft> jsonSerializer =
-			new Jackson2JsonRedisSerializer<>(objectMapper, NoteDraft.class);
+		JacksonJsonRedisSerializer<NoteDraft> jsonSerializer =
+			new JacksonJsonRedisSerializer<>(objectMapper, NoteDraft.class);
 
 		template.setValueSerializer(jsonSerializer);
 		template.setHashValueSerializer(jsonSerializer);

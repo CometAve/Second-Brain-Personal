@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.models.CreateEmbeddingResponse;
-import com.openai.models.EmbeddingCreateParams;
+import com.openai.models.embeddings.CreateEmbeddingResponse;
+import com.openai.models.embeddings.EmbeddingCreateParams;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -55,7 +55,9 @@ public class EmbeddingService {
 			CreateEmbeddingResponse response = client.embeddings().create(params);
 
 			// 임베딩 벡터 추출
-			List<Double> embedding = response.data().get(0).embedding();
+			List<Double> embedding = response.data().get(0).embedding().stream()
+				.map(Float::doubleValue)
+				.toList();
 
 			log.debug("✅ 임베딩 생성 완료 - 차원: {}", embedding.size());
 
