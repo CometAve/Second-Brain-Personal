@@ -12,15 +12,15 @@ interface NoteLayoutProps {
 const NoteLayout = ({ children }: NoteLayoutProps) => {
   return (
     <BaseLayout>
-      <div className="fixed left-10 top-10">
+      <div className="fixed top-10 left-10">
         <GlassElement as="button" icon={<BackArrowIcon />} />
       </div>
 
-      <div className="fixed right-10 top-10">
+      <div className="fixed top-10 right-10">
         <GlassElement as="button" icon={<DeleteIcon />} />
       </div>
 
-      <div className="fixed bottom-10 right-10">
+      <div className="fixed right-10 bottom-10">
         <GlassElement as="button" icon={<PlusIcon />} />
       </div>
 

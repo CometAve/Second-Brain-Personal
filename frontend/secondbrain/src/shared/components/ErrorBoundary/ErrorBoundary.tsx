@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // 기본 에러 UI
       return (
-        <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-8">
+        <div className="flex min-h-50 flex-col items-center justify-center gap-4 p-8">
           <p className="text-sm text-white/70">문제가 발생했습니다.</p>
           <button
             onClick={this.handleRetry}

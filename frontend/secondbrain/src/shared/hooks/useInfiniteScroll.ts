@@ -47,7 +47,7 @@ interface UseInfiniteScrollReturn {
    * - 이 ref를 리스트 끝부분의 요소에 연결
    * - 일반적으로 마지막 3개 항목 중 하나에 배치
    */
-  observerRef: React.RefObject<HTMLDivElement>;
+  observerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 /**

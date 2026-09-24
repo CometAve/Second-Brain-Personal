@@ -2,7 +2,7 @@ import { X } from 'lucide-react';
 import type { FloatingButtonPosition } from '@/types/dragSearch';
 import type { NoteSearchResult } from '@/types/note';
 import { DragSearchPanel } from '@/content-scripts/overlay/components/organisms/DragSearchPanel';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
 
 interface CompactSearchPopupProps {
   position: FloatingButtonPosition;
@@ -33,7 +33,7 @@ export function CompactSearchPopup({
   return (
     <ThemeProvider>
       <div
-        className="w-[320px] overflow-hidden rounded-lg border border-border bg-card shadow-xl"
+        className="w-80 overflow-hidden rounded-lg border border-border bg-card shadow-xl"
         style={{
           maxHeight: 'min(500px, 80vh)',
           display: 'flex',
@@ -47,7 +47,7 @@ export function CompactSearchPopup({
             className="rounded-full p-1.5 text-muted-foreground transition-all hover:rotate-90 hover:bg-accent hover:text-foreground"
             aria-label="닫기"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
 

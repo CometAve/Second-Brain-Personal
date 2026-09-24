@@ -27,11 +27,11 @@ export function Toolbar({ authenticated, user, onCollapse, onClose, onLogout }: 
       <div className="flex items-center gap-1">
         {authenticated && user && <UserAvatar user={user} onLogout={onLogout} />}
         <TooltipButton
-          icon={<ChevronUp className="h-4 w-4" />}
+          icon={<ChevronUp className="size-4" />}
           tooltip="접기"
           onClick={onCollapse}
         />
-        <TooltipButton icon={<X className="h-4 w-4" />} tooltip="닫기" onClick={onClose} />
+        <TooltipButton icon={<X className="size-4" />} tooltip="닫기" onClick={onClose} />
       </div>
     </div>
   );

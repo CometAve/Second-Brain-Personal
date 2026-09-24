@@ -5,7 +5,7 @@ export const STYLE_CONFIG = {
     size: 'w-12 h-12',
     borderRadius: 'rounded-full',
     elementSpecific:
-      'flex cursor-pointer items-center justify-center focus:outline-none focus:ring-2 focus:ring-white/20',
+      'flex cursor-pointer items-center justify-center focus:outline-hidden focus:ring-2 focus:ring-white/20',
   },
   input: {
     sm: {
@@ -20,7 +20,7 @@ export const STYLE_CONFIG = {
       borderRadius: 'rounded-3xl',
       type: 'text' as const,
     },
-    elementSpecific: 'block appearance-none outline-none focus:outline-none',
+    elementSpecific: 'block appearance-none outline-hidden focus:outline-hidden',
   },
   div: {
     scale: 'p-4 px-8 text-xl',

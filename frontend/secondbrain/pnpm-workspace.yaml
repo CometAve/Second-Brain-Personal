@@ -1,2 +1,44 @@
-onlyBuiltDependencies:
-  - esbuild
+minimumReleaseAgeExclude:
+  - '@eslint-react/ast@5.20.8'
+  - '@eslint-react/core@5.20.8'
+  - '@eslint-react/eslint-plugin@5.20.8'
+  - '@eslint-react/eslint@5.20.8'
+  - '@eslint-react/jsx@5.20.8'
+  - '@eslint-react/shared@5.20.8'
+  - '@eslint-react/var@5.20.8'
+  - '@milkdown/components@7.22.2'
+  - '@milkdown/core@7.22.2'
+  - '@milkdown/crepe@7.22.2'
+  - '@milkdown/kit@7.22.2'
+  - '@milkdown/plugin-block@7.22.2'
+  - '@milkdown/plugin-clipboard@7.22.2'
+  - '@milkdown/plugin-cursor@7.22.2'
+  - '@milkdown/plugin-diff@7.22.2'
+  - '@milkdown/plugin-history@7.22.2'
+  - '@milkdown/plugin-indent@7.22.2'
+  - '@milkdown/plugin-listener@7.22.2'
+  - '@milkdown/plugin-slash@7.22.2'
+  - '@milkdown/plugin-streaming@7.22.2'
+  - '@milkdown/plugin-tooltip@7.22.2'
+  - '@milkdown/plugin-trailing@7.22.2'
+  - '@milkdown/plugin-upload@7.22.2'
+  - '@milkdown/preset-commonmark@7.22.2'
+  - '@milkdown/preset-gfm@7.22.2'
+  - '@milkdown/prose@7.22.2'
+  - '@milkdown/react@7.22.2'
+  - '@milkdown/theme-nord@7.22.2'
+  - '@milkdown/transformer@7.22.2'
+  - '@milkdown/utils@7.22.2'
+  - '@tanstack/react-router@1.170.39'
+  - eslint-plugin-react-dom@5.20.8
+  - eslint-plugin-react-jsx@5.20.8
+  - eslint-plugin-react-naming-convention@5.20.8
+  - eslint-plugin-react-rsc@5.20.8
+  - eslint-plugin-react-web-api@5.20.8
+  - eslint-plugin-react-x@5.20.8
+  - lucide-react@1.48.0
+  - '@milkdown/ctx@7.22.2'
+  - '@milkdown/exception@7.22.2'
+  - prettier@3.9.9
+allowBuilds:
+  esbuild: true

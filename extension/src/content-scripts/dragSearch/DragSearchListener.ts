@@ -24,7 +24,7 @@ export class DragSearchListener {
         this.onDragSearchCallback(keyword, position);
       }) as (...args: unknown[]) => void,
       settings.debounceMs,
-    ) as (keyword: string, position: FloatingButtonPosition) => void;
+    );
     this.initialize();
   }
 
@@ -142,7 +142,7 @@ export class DragSearchListener {
           this.onDragSearchCallback(keyword, position);
         }) as (...args: unknown[]) => void,
         newSettings.debounceMs,
-      ) as (keyword: string, position: FloatingButtonPosition) => void;
+      );
     }
   }
 }

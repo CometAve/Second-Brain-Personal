@@ -1,49 +1,16 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
-interface Toast {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
-
-// Global toast queue (outside React)
-let toastQueue: Toast[] = [];
-const listeners = new Set<() => void>();
-
-function notifyListeners() {
-  listeners.forEach((listener) => listener());
-}
-
-export function addToast(message: string, type: 'success' | 'error' | 'info' = 'info') {
-  const toast: Toast = {
-    id: `toast-${Date.now()}-${Math.random()}`,
-    message,
-    type,
-  };
-
-  toastQueue = [...toastQueue, toast];
-  notifyListeners();
-
-  // Auto remove after 4s
-  setTimeout(() => {
-    removeToast(toast.id);
-  }, 4000);
-}
-
-function removeToast(id: string) {
-  toastQueue = toastQueue.filter((t) => t.id !== id);
-  notifyListeners();
-}
+import { toastQueue, listeners, removeToast, type Toast } from './simpleToastStore';
 
 /**
  * Toast Item Component
  */
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const iconMap = {
-    success: <CheckCircle className="h-5 w-5 text-green-500" />,
-    error: <XCircle className="h-5 w-5 text-red-500" />,
-    info: <Info className="h-5 w-5 text-blue-500" />,
+    success: <CheckCircle className="size-5 text-green-500" />,
+    error: <XCircle className="size-5 text-red-500" />,
+    info: <Info className="size-5 text-blue-500" />,
   };
 
   const bgColorMap = {
@@ -106,7 +73,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
           e.currentTarget.style.backgroundColor = 'transparent';
         }}
       >
-        <X className="h-4 w-4 text-gray-500" />
+        <X className="size-4 text-gray-500" />
       </button>
     </div>
   );
@@ -174,6 +141,3 @@ export function SimpleToastContainer() {
     </>
   );
 }
-
-// Export as showToast for compatibility
-export const showToast = addToast;

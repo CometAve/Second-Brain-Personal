@@ -17,6 +17,8 @@
 .DS_Store
 .AppleDouble
 .LSOverride
+# Finder 폴더 아이콘 파일
+Icon?
 
 # 썸네일
 ._*
@@ -320,3 +322,5 @@ docker-data/
 secrets/
 .secrets/
 dist.crx
+# Playwright CLI output (may contain credentials)
+.playwright-cli/

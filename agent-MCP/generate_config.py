@@ -14,6 +14,7 @@ config = {
                 "--directory",
                 unix_path,
                 "run",
+                "--locked",
                 "python",
                 "main.py"
             ]

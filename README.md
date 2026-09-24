@@ -1,3 +1,35 @@
+> 현재 `codex/frontend-dependency-upgrade` 작업트리는 웹·확장·AI·MCP의 의존성 최신화를 담당합니다. 백엔드 폴더의 모든 변경(의존성·SDK·Gradle·테스트 포함), 로컬 Docker/Compose 구성, 배포·모바일 제거, 로컬 API 주소 설정은 `codex/local-compose`에 모았습니다. 현재 작업트리의 백엔드·기존 배포 파일은 기준 버전 그대로이며 최신 실행 구성으로 검증하지 않았습니다.
+
+## 변경 범위와 버전 업데이트
+
+2026-09-24에 각 직접 의존성의 최신 안정 릴리스를 조사하고 설정·API 이전과 플러그인 교체를 적용했습니다. 이 작업트리의 전이 의존성은 JavaScript/Python 잠금 파일로 관리합니다. 백엔드의 버전 선택과 호환성 근거는 `codex/local-compose`의 `backend/secondbrain/README.md`에 있습니다. 전체 버전과 이전 근거는 각 모듈 README에 기록했습니다.
+
+| 영역 | 적용한 주요 버전 | 상세 기록 |
+| --- | --- | --- |
+| 웹·확장 | Node 26.10.0, pnpm 12.6.0, React 19.3.0, Vite 8.3.0, TypeScript 6.0.3 | [웹](frontend/secondbrain/README.md), [확장](extension/README.md) |
+| 검사·스타일 | ESLint 10.11.0, Hooks 7.1.1, typescript-eslint 8.70.1, Tailwind 4.3.3 | [웹 검사 체계](frontend/secondbrain/README.md) |
+| AI·MCP | Python 3.14.7, uv 0.12.18, FastAPI 0.141.1, OpenAI 3.19.2, FastMCP 4.0.8 | [AI](knowledge-graph-service/README.md), [MCP](agent-MCP/README.md) |
+
+현재 작업트리에서 최신 후보를 적용하지 못한 항목은 TypeScript입니다. 코드 수정량을 이유로 기존 버전을 유지하지 않았습니다.
+
+- **TypeScript 7.0.2 → 6.0.3**: 최신 typescript-eslint 8.70.1의 지원 범위가 `>=4.8.4 <6.1.0`이며 strict peer 설치가 실패합니다. ESLint 10 및 최신 TS 검사 플러그인과 함께 설치·실행되는 가장 높은 안정 버전을 선택했습니다.
+
+백엔드의 Java 27 → 26.0.2.1+1 선택 근거도 백엔드 변경과 함께 `codex/local-compose`의 README로 이동했습니다.
+
+ESLint의 기존 React 플러그인은 ESLint 10을 지원하는 `@eslint-react/eslint-plugin`으로 교체했습니다. CRXJS·Vite의 엔트리 충돌은 파일명 분리로 해결했습니다. 이 작업트리는 Tailwind 4, React 19 및 Python SDK 변경에 필요한 코드 이전을 포함합니다.
+
+분리 전 통합 상태에서 잠금 파일 기반 설치, 타입 검사, 린트, 빌드, 변경 API 최소 동작과 로컬 컨테이너 연결을 검증했습니다. 현재 작업트리는 웹·확장·AI·MCP 의존성·API 이전을 담당하며 백엔드 전체와 컨테이너 구성·로컬 주소 이전은 `codex/local-compose`에서 관리합니다. 분리 후 웹·확장 타입 검사·린트·빌드, Python 구문 검사 및 최신 Python 환경에서의 이동된 MCP 라우팅 테스트를 다시 확인했습니다. 실제 외부 OAuth·LLM·S3·TTS 호출, 상세 UI 검수와 기존 기능 버그 수정은 포함하지 않습니다. 린트 오류는 없으며 기존 코드에서 드러난 경고는 웹 18개·확장 25개로 남겨 두었습니다. 기존 Python 및 Neo4j API의 deprecation 경고도 숨기지 않았습니다.
+
+커밋 메시지는 공통 commitlint 설정으로 `type(scope): 한국어 설명` 형식을 검사합니다. Scope는 `frontend`, `extension`, `backend`, `knowledge-graph-service`, `agent-MCP`, `infra` 중 하나이며 공통 변경에서는 생략합니다. 현재 작업트리에 `.githooks/commit-msg`를 활성화했고, 정상·오류 메시지 40건과 임시 Git 저장소의 실제 커밋 허용·차단을 검증했습니다. 기존 모듈별 pre-commit·pre-push는 활성화하지 않으며 타입 검사·린트·빌드는 별도로 실행합니다. 새 clone이나 다른 작업트리에서의 훅 설치 방법은 [커밋 규칙](docs/commit-conventions.md)을 참고하세요.
+
+## 작업트리 분리
+
+현재 브랜치의 최신화 변경은 모듈별 커밋으로 정리했습니다. `codex/local-compose`의 변경은 아직 커밋하지 않았습니다. 최신화 변경을 먼저 master에 반영한 뒤 `codex/local-compose`에 가져와 로컬 실행 변경을 통합합니다. 코드·문서의 인접한 변경은 통합 시 검토가 필요할 수 있습니다. 모바일·Wear OS는 최신화 대상에서 제외하며 제거 변경은 로컬 구성 작업트리에만 둡니다.
+
+아래 내용은 기존 팀 프로젝트 기록이며 현재 개인 프로젝트의 실행 안내가 아닙니다.
+
+---
+
 <div align="center">
 
 # Second Brain

@@ -244,11 +244,11 @@ export function ExtensionOverlay({ isOpen, onToggle }: ExtensionOverlayProps) {
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${
                   activePanel === 'settings'
-                    ? 'mt-4 max-h-[600px] opacity-100'
+                    ? 'mt-4 max-h-150 opacity-100'
                     : activePanel === 'noteSearch'
-                      ? 'mt-4 w-[400px] opacity-100'
+                      ? 'mt-4 w-100 opacity-100'
                       : activePanel
-                        ? 'mt-4 max-h-[400px] opacity-100'
+                        ? 'mt-4 max-h-100 opacity-100'
                         : 'max-h-0 opacity-0'
                 }`}
               >

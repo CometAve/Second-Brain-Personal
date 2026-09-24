@@ -286,7 +286,9 @@ async function handleLogin(): Promise<void> {
       // 사용자 정보 조회 실패 시 정리
       console.error('❌ Failed to fetch user info:', userError);
       await browser.storage.local.remove(['access_token', 'authenticated', 'user']);
-      throw new Error('Failed to fetch user information after successful login');
+      throw new Error('Failed to fetch user information after successful login', {
+        cause: userError,
+      });
     }
   } catch (error) {
     // OAuth 전체 실패 처리
@@ -320,7 +322,7 @@ browser.action.onClicked.addListener((tab) => {
         try {
           await browser.scripting.executeScript({
             target: { tabId },
-            files: ['src/content-scripts/overlay/index.tsx'],
+            files: ['src/content-scripts/overlay/overlay-entry.tsx'],
           });
           // 주입 후 잠시 대기
           await new Promise((resolve) => setTimeout(resolve, 1000));

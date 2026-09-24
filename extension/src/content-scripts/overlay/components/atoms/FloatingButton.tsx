@@ -37,11 +37,7 @@ export function FloatingButton({ onClick }: FloatingButtonProps) {
           border: isDarkMode ? '2px solid white' : '2px solid black',
         }}
       >
-        <img
-          src={chrome.runtime.getURL('/assets/icon.png')}
-          alt="SecondBrain"
-          className="h-6 w-6"
-        />
+        <img src={chrome.runtime.getURL('/assets/icon.png')} alt="SecondBrain" className="size-6" />
       </button>
     </SimpleTooltip>
   );

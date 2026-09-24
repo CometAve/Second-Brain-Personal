@@ -35,7 +35,7 @@ const MainLayout = ({ children, onPlusClick }: MainLayoutProps) => {
       {/* 햄버거 메뉴 버튼 - 패널이 닫혀있을 때만 표시 */}
       <button
         onClick={handleMenuClick}
-        className={`absolute left-10 top-10 z-50 rounded-lg p-2 text-white/80 transition-all duration-200 ease-out hover:scale-110 hover:bg-white/10 hover:text-white motion-reduce:transition-none ${
+        className={`absolute top-10 left-10 z-50 rounded-lg p-2 text-white/80 transition-all duration-200 ease-out hover:scale-110 hover:bg-white/10 hover:text-white motion-reduce:transition-none ${
           isOpen ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
         }`}
         aria-label={isOpen ? '검색 패널 닫기' : '검색 패널 열기'}
@@ -44,15 +44,15 @@ const MainLayout = ({ children, onPlusClick }: MainLayoutProps) => {
       </button>
 
       {/* 검색창 */}
-      <div className="absolute left-1/2 top-10 z-50 -translate-x-1/2">
+      <div className="absolute top-10 left-1/2 z-50 -translate-x-1/2">
         <SearchBar />
       </div>
 
-      <div className="absolute right-10 top-10 z-50">
+      <div className="absolute top-10 right-10 z-50">
         <UserProfileButton />
       </div>
 
-      <div className="absolute bottom-10 right-10 z-50">
+      <div className="absolute right-10 bottom-10 z-50">
         <GlassElement
           as="button"
           icon={<PlusIcon />}

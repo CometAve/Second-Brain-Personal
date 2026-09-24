@@ -1,6 +1,6 @@
 import { ExtensionOverlay } from '@/content-scripts/overlay/components/organisms/ExtensionOverlay';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { ShadowRootProvider } from '@/contexts/ShadowRootContext';
+import { ThemeProvider } from '@/contexts/ThemeProvider';
+import { ShadowRootProvider } from '@/contexts/ShadowRootProvider';
 import { SimpleToastContainer } from '@/content-scripts/overlay/components/molecules/SimpleToast';
 import { useEffect } from 'react';
 import { useDragSearchStore } from '@/stores/dragSearchStore';

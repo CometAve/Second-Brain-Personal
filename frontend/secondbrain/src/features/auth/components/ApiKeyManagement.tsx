@@ -53,7 +53,7 @@ export function ApiKeyManagement() {
   const displayValue = apiKey ? (isVisible ? apiKey : '●'.repeat(36)) : '';
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* 제목 */}
       <h3 className="text-sm font-semibold text-white">MCP API Key 관리</h3>
 

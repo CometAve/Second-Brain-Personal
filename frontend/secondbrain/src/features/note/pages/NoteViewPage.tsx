@@ -101,7 +101,7 @@ export function NoteViewPage() {
         />
 
         {/* 중앙 컨텐츠: Title + Editor (전체 스크롤) */}
-        <div className="custom-scrollbar absolute inset-x-0 bottom-0 top-32 flex flex-col items-center gap-8 overflow-y-auto px-24">
+        <div className="custom-scrollbar absolute inset-x-0 top-32 bottom-0 flex flex-col items-center gap-8 overflow-y-auto px-24">
           {isLoading ? (
             <LoadingSpinner />
           ) : isError || !noteData ? (

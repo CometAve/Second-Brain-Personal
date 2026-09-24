@@ -1,6 +1,9 @@
 {
-  "entrypoint": "main.py",
-  "environment": {
-    "dependencies": ["httpx", "pydantic", "python-dotenv"]
+  "source": {
+    "path": "main.py",
+    "entrypoint": "mcp"
+  },
+  "deployment": {
+    "transport": "stdio"
   }
 }

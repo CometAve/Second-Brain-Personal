@@ -71,7 +71,7 @@ export function SaveStatusItem({ request, onRemove }: SaveStatusItemProps) {
         isRemoving && 'translate-x-4 opacity-0',
       )}
     >
-      <Icon className={cn('h-4 w-4 flex-shrink-0', config.iconClass)} />
+      <Icon className={cn('size-4 shrink-0', config.iconClass)} />
       <span
         className="flex-1 cursor-pointer truncate text-xs text-foreground hover:text-primary hover:underline"
         title={request.url}
@@ -88,11 +88,11 @@ export function SaveStatusItem({ request, onRemove }: SaveStatusItemProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+          className="size-6 p-0 hover:bg-destructive/10 hover:text-destructive"
           onClick={() => onRemove(request.id)}
           aria-label="삭제"
         >
-          <X className="h-3 w-3" />
+          <X className="size-3" />
         </Button>
       )}
     </div>

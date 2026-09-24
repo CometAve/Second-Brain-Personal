@@ -48,7 +48,7 @@ export function DragSearchPanel({
     return (
       <div className={`flex items-center justify-center ${isCompact ? 'py-8' : 'py-12'}`}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className={`animate-spin text-blue-600 ${isCompact ? 'h-6 w-6' : 'h-8 w-8'}`} />
+          <Loader2 className={`animate-spin text-blue-600 ${isCompact ? 'size-6' : 'size-8'}`} />
           <p className={`text-muted-foreground ${isCompact ? 'text-xs' : 'text-sm'}`}>검색 중...</p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export function DragSearchPanel({
         className={`flex flex-col items-center justify-center text-center ${isCompact ? 'py-8' : 'py-12'}`}
       >
         <div className={`mb-3 rounded-full bg-red-50 dark:bg-red-950 ${isCompact ? 'p-2' : 'p-3'}`}>
-          <Search className={`text-red-500 ${isCompact ? 'h-6 w-6' : 'h-8 w-8'}`} />
+          <Search className={`text-red-500 ${isCompact ? 'size-6' : 'size-8'}`} />
         </div>
         <p className={`font-medium text-foreground ${isCompact ? 'text-sm' : 'text-base'}`}>
           검색 중 오류가 발생했습니다
@@ -81,7 +81,7 @@ export function DragSearchPanel({
           className={`flex flex-col items-center justify-center text-center ${isCompact ? 'py-6' : 'py-8'}`}
         >
           <div className={`mb-3 rounded-full bg-muted ${isCompact ? 'p-2' : 'p-3'}`}>
-            <Search className={`text-muted-foreground ${isCompact ? 'h-8 w-8' : 'h-12 w-12'}`} />
+            <Search className={`text-muted-foreground ${isCompact ? 'size-8' : 'size-12'}`} />
           </div>
           <p className={`font-medium text-foreground ${isCompact ? 'text-sm' : 'text-base'}`}>
             &quot;{keyword}&quot;와 관련된 노트가 없습니다
@@ -96,7 +96,7 @@ export function DragSearchPanel({
           <div className="border-t border-gray-200 pt-4">
             <div className="mb-3 flex items-center justify-between">
               <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <History className="h-4 w-4" />
+                <History className="size-4" />
                 최근 검색
               </h4>
               <button
@@ -104,7 +104,7 @@ export function DragSearchPanel({
                 className="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-red-600"
                 title="히스토리 삭제"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="size-3" />
                 전체 삭제
               </button>
             </div>
@@ -116,7 +116,7 @@ export function DragSearchPanel({
                   className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
                 >
                   <span className="truncate text-gray-700">{item.keyword}</span>
-                  <span className="ml-2 flex-shrink-0 text-xs text-gray-400">
+                  <span className="ml-2 shrink-0 text-xs text-gray-400">
                     {item.resultCount}개 결과
                   </span>
                 </button>
@@ -173,7 +173,7 @@ export function DragSearchPanel({
             {/* 제목 */}
             <h4 className="flex items-center gap-2 text-sm font-semibold text-black transition-colors group-hover:text-primary dark:text-white">
               {note.title}
-              <ExternalLink className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+              <ExternalLink className="size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
             </h4>
 
             {/* 내용 미리보기 */}

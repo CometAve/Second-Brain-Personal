@@ -31,7 +31,7 @@ export function ToggleSwitch({ checked, onChange, disabled = false }: ToggleSwit
       } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
     >
       <span
-        className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white transition-transform duration-200 ease-in-out motion-reduce:transition-none ${
+        className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white transition-transform duration-200 ease-in-out motion-reduce:transition-none ${
           checked ? 'translate-x-5' : 'translate-x-0'
         }`}
       />

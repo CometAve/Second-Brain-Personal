@@ -28,7 +28,7 @@ export function ApiKeyMenuItem({ onClick }: ApiKeyMenuItemProps) {
     <button
       role="menuitem"
       onClick={handleClick}
-      className="flex w-full items-center gap-2 rounded px-4 py-2.5 text-left text-sm text-white transition-colors duration-150 ease-in-out hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 motion-reduce:transition-none"
+      className="flex w-full items-center gap-2 rounded-sm px-4 py-2.5 text-left text-sm text-white transition-colors duration-150 ease-in-out hover:bg-white/10 focus:ring-2 focus:ring-white/20 focus:outline-hidden motion-reduce:transition-none"
     >
       <Key className="size-4 shrink-0" />
       <span>MCP API Key 관리</span>

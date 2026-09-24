@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+case "$1" in
+  /*) message_file=$1 ;;
+  *) message_file="$PWD/$1" ;;
+esac
+
+for project in frontend/secondbrain extension; do
+  cli="$repo_root/$project/node_modules/@commitlint/cli/cli.js"
+  if [ -f "$cli" ]; then
+    exec node "$cli" \
+      --cwd "$repo_root" \
+      --config "$repo_root/commitlint.config.cjs" \
+      --edit "$message_file"
+  fi
+done
+
+echo 'commitlint를 찾을 수 없습니다. 웹 또는 확장에서 pnpm install --frozen-lockfile을 실행하세요.' >&2
+exit 1

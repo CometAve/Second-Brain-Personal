@@ -21,7 +21,7 @@ export function NoteListItem({ note, similarity, onViewDetail }: NoteListItemPro
       <div className="mb-2 flex items-start justify-between gap-2">
         <h4 className="line-clamp-1 flex-1 text-sm font-semibold text-foreground">{note.title}</h4>
         {similarity !== undefined && similarity > 0 && (
-          <span className="flex-shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
             {Math.round(similarity * 100)}%
           </span>
         )}
@@ -42,7 +42,7 @@ export function NoteListItem({ note, similarity, onViewDetail }: NoteListItemPro
         }}
         className="flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
       >
-        <ExternalLink className="h-3 w-3" />
+        <ExternalLink className="size-3" />
         전체보기
       </button>
     </div>

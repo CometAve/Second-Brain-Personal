@@ -4,49 +4,41 @@
   "version": "1.0.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwI2dl5nRMSrqrCz3XUxOHhZOtXpG6zc4Mb3V42fB9tNqNtG8qUr21Sdbl41x30JMgvYHftHFT22Vxd+2n8P6Qc2p8Tx/6WZIF0sgvC/79ZTIqnfCGYipar3/f6ifIBBoWXdm/3Xnrt9wrBc65A3ZjhkShzcApASvBLscAWqkggFVieEOVlRwOlmSjE0IBI/+vVKQpI/gZj7jfLL8eGDOK5eSLqp/8rfn6DMmKEtL3RDiQzDS/vHJOBAnLR2ajbtAmYs3lzJ1b49YE54coFkM1hzqWeKfHPaWmDR9pD6iPkJLrMQozYpX5R/ltXApNPqomFccVto/9l7D+9YNi0QXZwIDAQAB",
   "description": "Save and organize web pages to your SecondBrain",
-
   "icons": {
     "16": "assets/icon-16.png",
     "48": "assets/icon-48.png",
     "128": "assets/icon-128.png"
   },
-
   "permissions": ["identity", "storage", "tabs", "activeTab", "scripting", "sidePanel"],
-
   "host_permissions": ["https://api.brainsecond.site/*"],
-
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-
   "background": {
     "service_worker": "src/background/service-worker.ts",
     "type": "module"
   },
-
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content-scripts/overlay/index.tsx"],
+      "js": ["src/content-scripts/overlay/overlay-entry.tsx"],
       "run_at": "document_end"
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content-scripts/dragSearch/index.tsx"],
+      "js": ["src/content-scripts/dragSearch/drag-search-entry.tsx"],
       "run_at": "document_end"
     }
   ],
-
   "action": {
     "default_icon": {
       "16": "assets/icon-16.png",
       "48": "assets/icon-48.png"
     }
   },
-
   "web_accessible_resources": [
     {
-      "resources": ["assets/*", "Logo_upscale.png", "Logo.svg", ".vite/manifest.json"],
+      "resources": ["assets/*", "Logo_upscale.png", "Logo.svg"],
       "matches": ["<all_urls>"]
     }
   ]

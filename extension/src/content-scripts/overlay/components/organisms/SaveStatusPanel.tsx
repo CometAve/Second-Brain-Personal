@@ -78,7 +78,7 @@ export function SaveStatusPanel({ isOpen, onClose }: SaveStatusPanelProps) {
 
   return (
     <div
-      className="w-[320px] rounded-lg border border-border bg-card shadow-xl"
+      className="w-80 rounded-lg border border-border bg-card shadow-xl"
       style={{
         maxHeight: '300px',
         display: 'flex',
@@ -92,11 +92,11 @@ export function SaveStatusPanel({ isOpen, onClose }: SaveStatusPanelProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             onClick={onClose}
             aria-label="닫기"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </Button>
         </div>
 
@@ -110,7 +110,7 @@ export function SaveStatusPanel({ isOpen, onClose }: SaveStatusPanelProps) {
               className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
               onClick={handleClearAll}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="size-3" />
               <span>모두 지우기</span>
             </Button>
           )}

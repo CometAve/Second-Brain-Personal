@@ -1,24 +1,8 @@
-import { createContext, useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils/utils';
-
-type Theme = 'light' | 'dark' | 'system';
-type ResolvedTheme = 'light' | 'dark';
-
-interface ThemeContextType {
-  theme: Theme;
-  resolvedTheme: ResolvedTheme;
-  setTheme: (theme: Theme) => void;
-}
+import { ThemeContext, type Theme, type ResolvedTheme } from './ThemeContext';
 
 const STORAGE_KEY = 'secondbrain-theme';
-
-const initialState: ThemeContextType = {
-  theme: 'system',
-  resolvedTheme: 'light',
-  setTheme: () => null,
-};
-
-export const ThemeContext = createContext<ThemeContextType>(initialState);
 
 interface ThemeProviderProps {
   children: React.ReactNode;

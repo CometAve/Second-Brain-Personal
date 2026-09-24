@@ -40,7 +40,7 @@ export const GlassElement = <El extends ElementType>({
   const elementSpecific = getElementSpecificClasses(as);
 
   // 기본 스타일 (모든 엘리먼트 공통)
-  const baseStyles = 'backdrop-saturate-180 text-shadow-[0px_2px_12px_rgba(0,0,0,0.4)] relative';
+  const baseStyles = 'relative';
   const glassStyles =
     'bg-white/15 font-medium text-white shadow-[0px_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-[3.5px]';
 
@@ -99,7 +99,7 @@ export const GlassElement = <El extends ElementType>({
   const wrapperClassName = cn(
     'relative',
     // className에 width 관련 클래스가 없을 때만 기본값 적용
-    !className?.match(/\b(w-|min-w-|max-w-|size-)/) && (as === 'div' ? 'w-[25rem]' : 'w-fit'),
+    !className?.match(/\b(w-|min-w-|max-w-|size-)/) && (as === 'div' ? 'w-100' : 'w-fit'),
     className,
   );
 
@@ -107,7 +107,7 @@ export const GlassElement = <El extends ElementType>({
     <div ref={wrapperRef} className={wrapperClassName}>
       {/* input 왼쪽 아이콘 */}
       {hasInputIcon && (
-        <span className="pointer-events-none absolute left-5 top-1/2 z-20 -translate-y-1/2 text-white/60">
+        <span className="pointer-events-none absolute top-1/2 left-5 z-20 -translate-y-1/2 text-white/60">
           {icon}
         </span>
       )}

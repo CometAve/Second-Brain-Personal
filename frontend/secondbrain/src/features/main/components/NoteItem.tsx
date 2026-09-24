@@ -65,7 +65,7 @@ export function NoteItem({ note, isSelected, onToggle, isDeleteMode }: NoteItemP
           aria-checked={isSelected}
           role="checkbox"
         >
-          {isSelected && <Check className="size-4 stroke-[3] text-green-500" />}
+          {isSelected && <Check className="size-4 stroke-3 text-green-500" />}
         </button>
       )}
 

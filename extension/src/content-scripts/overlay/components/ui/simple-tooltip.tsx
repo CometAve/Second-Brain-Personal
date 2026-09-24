@@ -29,7 +29,7 @@ export function SimpleTooltip({ children, content, side = 'bottom' }: SimpleTool
       {isVisible && (
         <div
           className={cn(
-            'pointer-events-none absolute z-[99999] rounded-md bg-foreground px-3 py-1.5 text-xs whitespace-nowrap text-background shadow-lg',
+            'pointer-events-none absolute z-99999 rounded-md bg-foreground px-3 py-1.5 text-xs whitespace-nowrap text-background shadow-lg',
             side === 'top' && 'bottom-full left-1/2 mb-2 -translate-x-1/2',
             side === 'bottom' && 'top-full left-0 mt-2',
             side === 'left' && 'top-1/2 right-full mr-2 -translate-y-1/2',

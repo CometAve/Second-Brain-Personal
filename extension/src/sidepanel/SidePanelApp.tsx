@@ -120,7 +120,7 @@ export function SidePanelApp() {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-900">
         <div className="flex flex-col items-center gap-3">
-          <FileText className="h-12 w-12 text-neutral-400" />
+          <FileText className="size-12 text-neutral-400" />
           <p className="text-sm text-neutral-500 dark:text-neutral-400">노트를 선택해주세요</p>
         </div>
       </div>
@@ -132,7 +132,7 @@ export function SidePanelApp() {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-neutral-900">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="size-8 animate-spin text-blue-600 dark:text-blue-400" />
           <p className="text-sm text-neutral-500 dark:text-neutral-400">노트를 불러오는 중...</p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function SidePanelApp() {
       <div className="flex h-screen items-center justify-center bg-white p-6 text-center dark:bg-neutral-900">
         <div className="flex flex-col items-center gap-3">
           <div className="rounded-full bg-red-50 p-3 dark:bg-red-950">
-            <FileText className="h-12 w-12 text-red-500" />
+            <FileText className="size-12 text-red-500" />
           </div>
           <div>
             <p className="mb-2 text-base font-medium text-neutral-900 dark:text-neutral-100">
@@ -188,7 +188,7 @@ export function SidePanelApp() {
         {relatedNotes.length > 0 && (
           <div className="mt-12 border-t border-neutral-200 pt-8 dark:border-neutral-700">
             <h2 className="mb-6 flex items-center gap-2 border-b border-neutral-200 pb-3 text-lg font-bold text-neutral-900 dark:border-neutral-700 dark:text-neutral-100">
-              <Link2 className="h-5 w-5 text-blue-500" />
+              <Link2 className="size-5 text-blue-500" />
               관련 노트
               <span className="ml-2 text-sm font-normal text-neutral-500 dark:text-neutral-400">
                 ({relatedNotes.length})
@@ -201,7 +201,7 @@ export function SidePanelApp() {
                     onClick={() => void handleRelatedNoteClick(related.id)}
                     className="group flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   >
-                    <ChevronRight className="h-4 w-4 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
+                    <ChevronRight className="size-4 shrink-0 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-500" />
                     <span className="text-sm text-blue-600 hover:underline dark:text-blue-400">
                       {related.title}
                     </span>

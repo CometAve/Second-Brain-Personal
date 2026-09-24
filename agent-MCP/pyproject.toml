@@ -1,10 +1,16 @@
 [project]
 name = "agent-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "Second Brain 개인 노트 검색·저장 MCP 서버"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14,<3.15"
 dependencies = [
-    "fastmcp>=2.13.1",
-    "httpx>=0.28.1",
+    "fastmcp==4.0.8",
+    "httpx==0.28.1",
+    "pydantic==2.13.5",
+    "python-dotenv==1.2.3",
 ]
+
+[tool.uv]
+required-version = "==0.12.18"
+prerelease = "disallow"

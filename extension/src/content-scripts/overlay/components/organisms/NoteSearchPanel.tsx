@@ -30,7 +30,7 @@ export function NoteSearchPanel({
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <div className="mb-2 rounded-full bg-red-50 p-2 dark:bg-red-950">
-          <FileText className="h-6 w-6 text-red-500" />
+          <FileText className="size-6 text-red-500" />
         </div>
         <p className="text-sm font-medium text-foreground">검색 중 오류가 발생했습니다</p>
         <p className="mt-1 text-xs text-muted-foreground">{error}</p>
@@ -43,7 +43,7 @@ export function NoteSearchPanel({
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="size-6 animate-spin text-primary" />
           <p className="text-xs text-muted-foreground">검색 중...</p>
         </div>
       </div>
@@ -55,7 +55,7 @@ export function NoteSearchPanel({
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
         <div className="mb-2 rounded-full bg-muted p-2">
-          <FileText className="h-8 w-8 text-muted-foreground" />
+          <FileText className="size-8 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-foreground">
           &quot;{keyword}&quot;와 관련된 노트가 없습니다
@@ -67,20 +67,20 @@ export function NoteSearchPanel({
 
   // 검색 결과 표시
   return (
-    <div className="flex w-[400px] flex-col gap-4">
+    <div className="flex w-100 flex-col gap-4">
       {/* 관련 노트 섹션 */}
       {notesList.length > 0 ? (
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <FileText className="h-4 w-4" />
+              <FileText className="size-4" />
               관련 노트
             </h3>
           </div>
 
           {/* 노트 리스트에만 스크롤 적용 - 3개 초과시에만 스크롤 */}
           <div
-            className={`flex flex-col gap-2 ${notesList.length > 3 ? 'max-h-[240px] overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50 [&::-webkit-scrollbar-track]:bg-transparent' : ''}`}
+            className={`flex flex-col gap-2 ${notesList.length > 3 ? 'max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50 [&::-webkit-scrollbar-track]:bg-transparent' : ''}`}
           >
             {notesList.map((note) => (
               <NoteListItem

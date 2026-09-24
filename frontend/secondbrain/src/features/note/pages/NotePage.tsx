@@ -43,7 +43,7 @@ export function NotePage() {
   return (
     <NoteLayout>
       {/* 좌측 상단: BackArrow 옆 Logo (BackArrow는 NoteLayout이 제공) */}
-      <div className="fixed left-[120px] top-10 z-10">
+      <div className="fixed top-10 left-30 z-10">
         <GlassElement
           as="button"
           icon={<LogoIcon className="size-8" />}
@@ -52,7 +52,7 @@ export function NotePage() {
       </div>
 
       {/* 우측 상단: DeleteIcon 옆 ToggleSwitch (DeleteIcon은 NoteLayout이 제공) */}
-      <div className="fixed right-[120px] top-10 z-10 flex h-14 items-center gap-3">
+      <div className="fixed top-10 right-30 z-10 flex h-14 items-center gap-3">
         <span className="text-sm font-medium text-white">리마인드</span>
         <ToggleSwitch
           checked={isReminderEnabled}
@@ -62,9 +62,9 @@ export function NotePage() {
       </div>
 
       {/* 중앙 컨텐츠: Title + Editor (Page 전체 스크롤) */}
-      <div className="custom-scrollbar absolute inset-x-0 bottom-0 top-32 flex flex-col items-center gap-8 overflow-y-auto px-32">
+      <div className="custom-scrollbar absolute inset-x-0 top-32 bottom-0 flex flex-col items-center gap-8 overflow-y-auto px-32">
         {/* 컨텐츠 영역 - Notion 스타일 최대 너비 제한 */}
-        <div className="flex w-full max-w-[900px] flex-col">
+        <div className="flex w-full max-w-225 flex-col">
           {/* 제목 입력 */}
           <NoteTitleInput value={title} onChange={setTitle} placeholder="제목을 입력해주세요..." />
 

@@ -1,11 +1,11 @@
-import { createRootRoute, Outlet } from '@tanstack/react-router';
-import { Toaster } from 'sonner';
+import { createRootRoute } from '@tanstack/react-router';
 
 import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/authStore';
 import { refreshToken } from '@/features/auth/services/authService';
 import { getCurrentUser } from '@/features/auth/services/userService';
 import { isAxiosErrorWithStatus } from '@/shared/utils/typeGuards';
+import { RootLayout } from '@/layouts/RootLayout';
 
 /**
  * 루트 레이아웃
@@ -14,7 +14,7 @@ import { isAxiosErrorWithStatus } from '@/shared/utils/typeGuards';
  * - Router context에 인증 상태 제공
  */
 export const Route = createRootRoute({
-  component: RootComponent,
+  component: RootLayout,
   /**
    * beforeLoad에서 세션 복원 완료 대기 (비동기)
    * - ensureQueryData로 세션 복원 완료까지 대기
@@ -73,12 +73,3 @@ export const Route = createRootRoute({
     };
   },
 });
-
-function RootComponent() {
-  return (
-    <>
-      <Outlet />
-      <Toaster position="top-right" expand={false} richColors closeButton />
-    </>
-  );
-}

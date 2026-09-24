@@ -19,7 +19,7 @@ export function useBeforeUnloadSave({
   shouldSkip,
 }: UseBeforeUnloadSaveOptions): void {
   // beforeunload 핸들러를 ref로 저장하여 최신 값 참조 보장
-  const handleBeforeUnloadRef = useRef<() => void>();
+  const handleBeforeUnloadRef = useRef<(() => void) | undefined>(undefined);
 
   handleBeforeUnloadRef.current = () => {
     // shouldSkip이 true면 저장하지 않음
