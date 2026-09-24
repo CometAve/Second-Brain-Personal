@@ -322,3 +322,5 @@ docker-data/
 secrets/
 .secrets/
 dist.crx
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
