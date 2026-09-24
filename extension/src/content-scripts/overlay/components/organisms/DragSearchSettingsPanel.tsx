@@ -60,22 +60,22 @@ export function DragSearchSettingsPanel({ onClose }: DragSearchSettingsPanelProp
   };
 
   return (
-    <div className="w-[320px] rounded-lg border border-border bg-card p-4 shadow-xl">
+    <div className="w-80 rounded-lg border border-border bg-card p-4 shadow-xl">
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
+            <Settings className="size-5 text-primary" />
             <h3 className="text-lg font-semibold text-card-foreground">드래그 검색 설정</h3>
           </div>
           {onClose && (
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0"
+              className="size-8 p-0"
               onClick={onClose}
               aria-label="닫기"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="size-5" />
             </Button>
           )}
         </div>
@@ -101,7 +101,7 @@ export function DragSearchSettingsPanel({ onClose }: DragSearchSettingsPanelProp
             }}
           >
             <span
-              className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
+              className="inline-block size-5 transform rounded-full bg-white transition-transform"
               style={{
                 transform: settings.enabled ? 'translateX(22px)' : 'translateX(2px)',
               }}
@@ -170,7 +170,7 @@ export function DragSearchSettingsPanel({ onClose }: DragSearchSettingsPanelProp
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring focus:outline-none"
             />
             <Button onClick={handleAddDomain} disabled={!newDomain} size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               추가
             </Button>
           </div>
@@ -186,11 +186,11 @@ export function DragSearchSettingsPanel({ onClose }: DragSearchSettingsPanelProp
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-5 w-5 p-0 hover:text-destructive"
+                    className="size-5 p-0 hover:text-destructive"
                     onClick={() => handleRemoveDomain(domain)}
                     aria-label={`${domain} 제거`}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="size-3" />
                   </Button>
                 </div>
               ))}

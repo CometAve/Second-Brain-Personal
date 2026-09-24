@@ -57,7 +57,7 @@ export function SearchInput({
         <div className="relative flex-1">
           {/* 검색 아이콘 (항상 표시) */}
           <div className="absolute top-2.5 left-3 flex items-center">
-            <Search className="h-4 w-4 text-muted-foreground" />
+            <Search className="size-4 text-muted-foreground" />
           </div>
 
           <input
@@ -76,10 +76,10 @@ export function SearchInput({
         {/* 취소 버튼 */}
         <button
           onClick={onCancel}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-accent"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:bg-accent"
           title="검색 취소 (ESC)"
         >
-          <X className="h-4 w-4" />
+          <X className="size-4" />
         </button>
       </div>
     </div>

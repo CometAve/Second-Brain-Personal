@@ -26,14 +26,14 @@ export interface AuthCardProps {
 
 export function AuthCard({ state, message = '로딩 중...' }: AuthCardProps) {
   return (
-    <div className="w-[320px] rounded-xl border border-border bg-card p-6 shadow-lg">
+    <div className="w-80 rounded-xl border border-border bg-card p-6 shadow-lg">
       {/* Spinner - 항상 렌더링으로 DOM 유지, 애니메이션 연속성 보장 */}
       <div className="mb-6 flex justify-center">
         <Spinner size="lg" duration={6} />
       </div>
 
       {/* 하단 내용 - 크로스페이드 전환으로 부드러운 전환 */}
-      <div className="relative min-h-[80px]">
+      <div className="relative min-h-20">
         {/* Loading 상태 내용 */}
         <div
           className={`transition-opacity duration-300 ${

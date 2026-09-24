@@ -1,7 +1,7 @@
 import { Button } from '@/content-scripts/overlay/components/ui/button';
 import { SimpleTooltip } from '@/content-scripts/overlay/components/ui/simple-tooltip';
 import type { VariantProps } from 'class-variance-authority';
-import { buttonVariants } from '@/content-scripts/overlay/components/ui/button';
+import { buttonVariants } from '@/content-scripts/overlay/components/ui/buttonVariants';
 
 /**
  * Tooltip Button (Atom)

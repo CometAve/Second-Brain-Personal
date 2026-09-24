@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { crx } from '@crxjs/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
-import manifest from './src/manifest.json';
+import manifest from './src/manifest.json' with { type: 'json' };
 
 export default defineConfig({
   plugins: [
@@ -20,7 +20,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   optimizeDeps: {
@@ -36,7 +36,7 @@ export default defineConfig({
       'rehype-highlight',
     ],
     entries: [
-      'src/content-scripts/overlay/index.tsx',
+      'src/content-scripts/overlay/overlay-entry.tsx',
       'src/background/service-worker.ts',
       'src/sidepanel/index.tsx',
     ],
@@ -46,8 +46,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     // 빌드 타겟 명시
     target: 'esnext',
-    minify: 'esbuild',
-    rollupOptions: {
+    minify: 'oxc',
+    rolldownOptions: {
       output: {
         // 읽기 쉬운 청크 이름
         chunkFileNames: 'assets/[name]-[hash].js',

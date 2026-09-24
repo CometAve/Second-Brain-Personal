@@ -24,7 +24,7 @@ export function NoteListSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
-        <Skeleton className="h-4 w-4" />
+        <Skeleton className="size-4" />
         <Skeleton className="h-4 w-20" />
       </div>
       <div className="space-y-2">

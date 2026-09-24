@@ -42,9 +42,7 @@ export function SaveBatchGroup({ requests, onRemove }: SaveBatchGroupProps) {
       >
         <div className="flex flex-1 items-center gap-2">
           <ChevronDown
-            className={`h-4 w-4 flex-shrink-0 transition-transform ${
-              isExpanded ? '' : '-rotate-90'
-            }`}
+            className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`}
           />
           <span className="text-sm font-medium text-card-foreground">
             {total}개 페이지{' '}
@@ -64,7 +62,7 @@ export function SaveBatchGroup({ requests, onRemove }: SaveBatchGroupProps) {
         </div>
 
         {/* Status Badge */}
-        <div className="flex flex-shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {failed > 0 && (
             <span className="text-xs font-medium text-destructive">{failed}개 실패</span>
           )}

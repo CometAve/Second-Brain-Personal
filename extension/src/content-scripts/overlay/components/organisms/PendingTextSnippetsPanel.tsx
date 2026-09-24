@@ -30,7 +30,7 @@ export function PendingTextSnippetsPanel({
 
   return (
     <div
-      className="w-[320px] rounded-lg border border-border bg-card shadow-xl"
+      className="w-80 rounded-lg border border-border bg-card shadow-xl"
       style={{
         maxHeight: '400px',
         display: 'flex',
@@ -44,11 +44,11 @@ export function PendingTextSnippetsPanel({
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="size-7 p-0"
             onClick={onClose}
             aria-label="닫기"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </Button>
         </div>
 
@@ -64,7 +64,7 @@ export function PendingTextSnippetsPanel({
               className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
               onClick={onClearAll}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="size-3" />
               <span>전체 삭제</span>
             </Button>
           )}
@@ -85,7 +85,7 @@ export function PendingTextSnippetsPanel({
             >
               {/* 텍스트 미리보기 */}
               <div className="mb-2 flex items-start gap-2">
-                <FileText className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                <FileText className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                 <p className="line-clamp-3 flex-1 text-sm leading-relaxed text-foreground">
                   {snippet.text}
                 </p>
@@ -111,14 +111,14 @@ export function PendingTextSnippetsPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                  className="size-6 p-0 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemove(snippet.id);
                   }}
                   aria-label="삭제"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="size-3" />
                 </Button>
               </div>
             </div>

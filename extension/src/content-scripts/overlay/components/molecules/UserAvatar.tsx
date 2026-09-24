@@ -27,7 +27,7 @@ export function UserAvatar({ user, onLogout }: UserAvatarProps) {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button className="inline-flex items-center justify-center rounded-full p-0 transition-opacity hover:opacity-80">
-          <Avatar className="h-8 w-8">
+          <Avatar className="size-8">
             <AvatarImage src={user.picture} alt={user.name} />
             <AvatarFallback>{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
@@ -39,7 +39,7 @@ export function UserAvatar({ user, onLogout }: UserAvatarProps) {
           className="cursor-pointer text-destructive focus:text-destructive"
           onClick={onLogout}
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="size-4" />
           <span>로그아웃</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -1,90 +1,47 @@
 import js from '@eslint/js';
 import globals from 'globals';
-import react from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
-// import tailwindcss from 'eslint-plugin-tailwindcss'; // Tailwind v4와 호환 문제로 비활성화
+import { reactRefresh } from 'eslint-plugin-react-refresh';
+import tailwindcss from 'eslint-plugin-tailwindcss';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import { defineConfig, globalIgnores } from 'eslint/config';
 
-export default tseslint.config(
-  { ignores: ['dist'] },
-
+export default defineConfig([
+  globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommendedTypeChecked,
-      react.configs.flat.recommended,
-      react.configs.flat['jsx-runtime'],
-      // ...tailwindcss.configs['flat/recommended'], // Tailwind v4와 호환 문제로 비활성화
+      eslintReact.configs['recommended-typescript'],
+      reactRefresh.configs.vite(),
+      tailwindcss.configs.recommended,
     ],
     languageOptions: {
-      ecmaVersion: 2020,
-      globals: {
-        ...globals.browser,
-        ...globals.webextensions,
-        chrome: 'readonly',
-      },
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+      ecmaVersion: 'latest',
+      globals: { ...globals.browser, ...globals.webextensions, chrome: 'readonly' },
+      parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
     plugins: {
       'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-      // tailwindcss, // Tailwind v4와 호환 문제로 비활성화
       'no-relative-import-paths': noRelativeImportPaths,
     },
     settings: {
-      react: {
-        version: 'detect',
-      },
-      // tailwindcss 설정은 prettier-plugin-tailwindcss가 처리
+      'react-x': { version: 'detect' },
+      tailwindcss: { functions: ['cn', 'cva'], cssConfigPath: './src/index.css' },
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      // Tailwind 클래스 정렬은 prettier-plugin-tailwindcss가 처리
+      // 기존 Hooks 검사 범위를 유지한다. Compiler 규칙 도입은 별도 작업이다.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'no-relative-import-paths/no-relative-import-paths': [
         'warn',
         { allowSameFolder: true, rootDir: 'src', prefix: '@' },
       ],
-      // React Three Fiber: 커스텀 props 허용
-      'react/no-unknown-property': [
-        'error',
-        {
-          ignore: [
-            // Three.js 메쉬 속성
-            'geometry',
-            'material',
-            'position',
-            'rotation',
-            'scale',
-            // 조명 속성
-            'intensity',
-            'color',
-            'castShadow',
-            'receiveShadow',
-            // 재질 속성
-            'metalness',
-            'roughness',
-            'flatShading',
-            'wireframe',
-            'opacity',
-            'transparent',
-            'side',
-            'depthWrite',
-            // 기타 Three.js 속성
-            'args',
-            'attach',
-            'dispose',
-          ],
-        },
-      ],
     },
   },
   eslintConfigPrettier,
-);
+]);

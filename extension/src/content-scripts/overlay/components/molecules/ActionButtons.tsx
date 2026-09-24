@@ -8,7 +8,7 @@ import { usePendingTextSnippetsStore } from '@/stores/pendingTextSnippetsStore';
 import { useSaveStatusStore } from '@/stores/saveStatusStore';
 import { useNoteSearchStore } from '@/stores/noteSearchStore';
 import browser from 'webextension-polyfill';
-import { showToast } from '@/content-scripts/overlay/components/molecules/SimpleToast';
+import { showToast } from '@/content-scripts/overlay/components/molecules/simpleToastStore';
 import type { SavePageResponse, SavePageError } from '@/types/note';
 import { debounce } from '@/lib/utils/debounce';
 
@@ -210,7 +210,7 @@ ${snippet.text}`;
   return (
     <div
       className={`relative rounded-xl border border-border bg-card p-4 shadow-lg transition-all duration-300 ${
-        isSearchMode ? 'w-[400px]' : 'w-[320px]'
+        isSearchMode ? 'w-100' : 'w-80'
       }`}
     >
       {/* 검색바 (최상단, 항상 표시) */}
@@ -236,7 +236,7 @@ ${snippet.text}`;
               className="flex-1 justify-start gap-2 hover:bg-accent"
               onClick={() => void handleAddPage()}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               <span>Add URL</span>
             </Button>
 
@@ -250,7 +250,7 @@ ${snippet.text}`;
               className="flex-1 justify-start gap-2 hover:bg-accent"
               onClick={() => onTogglePanel('snippetsList')}
             >
-              <FileText className="h-4 w-4" />
+              <FileText className="size-4" />
               <span>임시 노트</span>
             </Button>
 
@@ -264,7 +264,7 @@ ${snippet.text}`;
               className="flex-1 justify-start gap-2 hover:bg-accent"
               onClick={() => void handleSave()}
             >
-              <Download className="h-4 w-4" />
+              <Download className="size-4" />
               <span>Save</span>
             </Button>
 
@@ -279,7 +279,7 @@ ${snippet.text}`;
             className="w-full justify-start gap-2 hover:bg-accent"
             onClick={() => onTogglePanel('settings')}
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="size-4" />
             <span>드래그 검색 설정</span>
           </Button>
         </div>
