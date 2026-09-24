@@ -10,8 +10,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview",
-    "prepare": "cd ../.. && husky frontend/secondbrain/.husky"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@milkdown/crepe": "^7.17.1",

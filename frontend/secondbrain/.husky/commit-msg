@@ -1,26 +1,2 @@
-# Frontend 디렉토리로 이동
-cd frontend/secondbrain || {
-  echo "❌ 디렉토리를 찾을 수 없습니다: frontend/secondbrain"
-  exit 1
-}
-
-echo "📝 커밋 메시지 유효성 검사중..."
-pnpm exec commitlint --edit $1
-
-if [ $? -ne 0 ]; then
-  echo ""
-  echo "❌ 커밋 메시지 컨벤션에 유효하지 않습니다.!"
-  echo ""
-  echo "올바른 형식: [domain] type: subject"
-  echo ""
-  echo "Domain: [FE], [BE], [AI], [DB]"
-  echo "Type: feat, fix, docs, style, refactor, test, build, ci, perf, chore, revert"
-  echo ""
-  echo "예시:"
-  echo "  [FE] feat: 로그인 기능 추가"
-  echo "  [BE] fix: 데이터베이스 연결 오류 수정"
-  echo ""
-  exit 1
-fi
-
-echo "✅ 커밋 메시지 유효합니다!"
+#!/bin/sh
+exec sh "$(git rev-parse --show-toplevel)/.githooks/commit-msg" "$@"
