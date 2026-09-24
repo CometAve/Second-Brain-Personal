@@ -2,8 +2,6 @@
 
 간단하고 실용적으로 정리한 리포지토리 설명서입니다. 이 프로젝트는 개인 노트를 임베딩하고 유사도 기반으로 노트들을 연결해 Neo4j 지식 그래프를 구성합니다.
 
-이 작업 공간은 Python 의존성 최신화를 담당합니다. Docker·Compose 실행 구성은 후속 `codex/local-compose`에 있으며, 최신화 변경을 통합한 뒤 사용합니다. 이 작업 공간에 남아 있는 기존 Docker 설정을 최신 Python 조합의 검증된 실행 구성으로 취급하지 않습니다.
-
 현재 상태
 - API 서버 (FastAPI) 동작
 - 워커(Background consumer) 구성 완료 — RabbitMQ로 메시지를 받아 처리합니다
@@ -14,7 +12,7 @@
 기술 스택(요약)
 - Python 3.14.7
 - FastAPI, Uvicorn
-- Neo4j Python Driver 6.3.1
+- Neo4j Python Driver 6.3.1 (서버 버전은 루트 Compose 참조)
 - RabbitMQ + pika (워커에서 사용)
 - 의존성 관리: `uv` (pyproject.toml, uv.lock)
 
@@ -22,6 +20,7 @@
 - `main.py` — FastAPI 진입점
 - `worker.py` — 워커 실행 스크립트 (app.workers.note_consumer 사용)
 - `pyproject.toml`, `uv.lock` — 의존성
+- `Dockerfile`, `Dockerfile.worker` — API/워커 컨테이너 설정 (실행 구성은 저장소 루트 Compose에서 관리)
 
 빠른 시작 (개발)
 1) 의존성 설치
@@ -43,9 +42,23 @@ uv run --locked python main.py
 uv run --locked python worker.py
 ```
 
+도커 실행은 [저장소 루트 README](../README.md)의 로컬 환경 준비 절차를 따릅니다. 기존 서비스별 Compose는 루트 구성으로 통합했습니다.
+
+저장소 루트에서 API와 워커 실행 및 상태 확인:
+
+```bash
+docker compose --env-file infra/local/.env up --build -d --wait ai worker
+docker compose --env-file infra/local/.env exec ai python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/ai/health').read().decode())"
+docker compose --env-file infra/local/.env logs -f ai worker
+```
+
+API와 워커는 Neo4j가 준비된 뒤 실행해야 하며, 워커는 RabbitMQ와 백엔드도 필요합니다. 위 명령은 선언된 의존 서비스를 함께 실행합니다. API는 단일 프로세스로 실행합니다. 컨테이너는 `uv==0.12.18`과 잠금 파일 `uv.lock`을 사용하고, 실제 `.env` 파일은 이미지에 포함하지 않습니다.
+
+기동 및 `/ai/health` 확인은 LLM API나 tokenizer 다운로드를 호출하지 않습니다. 합성 자격증명으로 상태 확인은 가능하지만, 임베딩·요약·자연어 검색에는 실제 모델 API 설정이 필요합니다. 합성 자격증명 상태에서는 노트 생성·수정 이벤트 처리까지 성공한 것으로 간주하면 안 됩니다.
+
 ## 2026-09-24 의존성 기준
 
-Python은 `.python-version`에서 **3.14.7**, uv는 `pyproject.toml`에서 **0.12.18**로 지정합니다. `pyproject.toml`은 검증한 Python 3.14 계열만 허용합니다. API·워커 이미지의 런타임 변경은 후속 `codex/local-compose`에 포함됩니다.
+Python은 `.python-version`과 두 Dockerfile에서 **3.14.7**, uv는 `pyproject.toml`과 Dockerfile에서 **0.12.18**로 지정합니다. `pyproject.toml`은 검증한 Python 3.14 계열만 허용합니다. API·워커 이미지는 동일한 `python:3.14.7-slim-trixie`와 공식 uv 이미지를 사용합니다. [uv Docker 가이드](https://docs.astral.sh/uv/guides/integration/docker/)
 
 | 패키지 | 고정 버전 |
 |---|---|
@@ -70,14 +83,18 @@ uv lock --check
 uv sync --locked --extra dev --no-install-project
 ```
 
-다음은 최신화와 로컬 실행 변경을 함께 적용했을 때의 검증 기록입니다. Python 3.14.7의 Mac ARM·Linux ARM에서 의존성 해석을 확인했습니다. Mac의 별도 가상환경에서 실제 설치, OpenAI 임베딩 모의 요청·응답, 현재 세 structured-output 스키마 생성, LangGraph `compile`·`ainvoke`를 확인했습니다. DB 연결을 모의 객체로 대체한 API·워커 import, 실제 OpenAPI 경로 생성, `TestClient`의 `/ai/health` 200 응답도 확인했습니다. 실제 자격증명·LLM API는 사용하지 않았습니다. 토크나이저 지연 초기화와 Docker·DB 연결 검증은 `codex/local-compose`에 속하며, 현재 분리된 최신화 작업 트리의 단독 기동 검증을 의미하지 않습니다.
+다음은 2026-09-24에 최신 의존성과 로컬 실행 구성을 함께 적용했을 때의 검증 기록입니다. Python 3.14.7의 Mac ARM·Linux ARM에서 의존성 해석을 확인했습니다. Mac의 별도 가상환경에서 실제 설치, OpenAI 임베딩 모의 요청·응답, 현재 세 structured-output 스키마 생성, LangGraph `compile`·`ainvoke`를 확인했습니다. DB 연결을 모의 객체로 대체한 API·워커 import, 실제 OpenAPI 경로 생성, `TestClient`의 `/ai/health` 200 응답도 확인했습니다. 실제 자격증명·LLM API는 사용하지 않았습니다. Docker 전체 기동과 실제 DB 연결 검증은 [로컬 환경 검증 기록](../infra/local/README.md)을 따릅니다. 이 기록은 실제 자격증명을 사용하는 노트 이벤트 처리나 검색 품질을 검증한 결과는 아닙니다.
+
+2026-09-24 master 통합 후 API·워커 import, OpenAPI 경로, 모의 DB 조건의 `/ai/health` 200을 다시 확인했습니다. 이때 외부 소켓 연결과 기동 시 tokenizer 로드를 차단했습니다. 토큰 계산을 처음 요청할 때 한 번 초기화하고 다음 요청에서 재사용하는 동작도 모의 tokenizer로 확인했습니다. 실제 DB lifespan 기동과 LLM 요청은 이 검사에 포함하지 않습니다.
 
 알려진 기존 제약은 이번 버전 변경에서 수정하지 않았습니다.
 
-- 두 에이전트의 `models.py`는 `OPENAI_BASE_URL`을 문자열로 전제합니다. 설정을 생략하면 환경 변수 대입이 실패하므로 사용할 API 주소를 명시해야 합니다.
+- 두 에이전트의 `models.py`는 `OPENAI_BASE_URL`을 문자열로 전제합니다. 설정을 생략하면 환경 변수 대입이 실패하므로 사용할 API 주소를 명시해야 합니다. 루트 Compose의 합성 기본값은 기동 확인용입니다.
 - 일부 기존 테스트는 실제 Neo4j·RabbitMQ·LLM에 연결하는 통합 스크립트이며, 과거 `/health`·`/api/v1` 경로를 사용합니다. 현재 실제 경로는 `/ai/health`·`/ai/api/v1`입니다. 전체 pytest 실행을 외부 연결 없는 단위 테스트로 취급하지 않습니다.
 - 일부 Pydantic 모델의 class 기반 `Config`는 기존 deprecated 사용입니다. 이번 작업에서는 경고를 숨기는 설정을 추가하지 않았습니다.
 - 현재 최신 LangSmith의 `asyncio.iscoroutinefunction` 사용도 Python 3.14에서 deprecation 경고를 냅니다. 실행 검사는 통과했으며, 향후 upstream 변경을 확인해야 합니다.
+
+- Neo4j 2026.09의 `db.index.vector.queryNodes`는 deprecated 상태이지만 현재 작동합니다. 실제 최신 서버에서 합성 1536차원 벡터의 인덱스 생성·검색·삭제를 검증했으며, Cypher 검색 구문 전환은 후속 작업으로 남깁니다.
 
 ## 🎯 주요 기능 설명
 

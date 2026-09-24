@@ -32,8 +32,7 @@ coverage.xml
 
 # Project
 .env
-.env.local
-.env.*.local
+.env.*
 node_modules/
 dist/
 build/
@@ -43,6 +42,7 @@ build/
 .hypothesis
 
 # Docker
-Dockerfile
-docker-compose.yml
+Dockerfile*
+*compose*.yml
+*compose*.yaml
 .dockerignore
