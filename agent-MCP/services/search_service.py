@@ -11,7 +11,7 @@ class SearchService:
     """노트 검색 서비스"""
 
     def __init__(self, api_base_url: str, api_key: str):
-        self.api_base_url = api_base_url
+        self.api_base_url = api_base_url.rstrip("/") + "/"
         self.api_key = api_key
 
     async def search_notes(

@@ -15,13 +15,17 @@ class GraphNoteSearchService:
     각 노트의 상세 정보를 비동기적으로 가져와 포맷팅된 결과를 반환합니다.
 
     Attributes:
-        api_base_url (str): API 서버의 기본 URL
+        api_base_url (str): 백엔드 API 서버의 기본 URL
+        ai_api_base_url (str): 지식 그래프 API 서버의 기본 URL
         api_key (str): API 인증에 사용되는 키
         user_id (int | None): 인증된 사용자의 ID (초기값: None)
     """
 
-    def __init__(self, api_base_url: str, api_key: str):
-        self.api_base_url = api_base_url
+    def __init__(
+        self, api_base_url: str, api_key: str, ai_api_base_url: str | None = None
+    ):
+        self.api_base_url = api_base_url.rstrip("/") + "/"
+        self.ai_api_base_url = (ai_api_base_url or api_base_url).rstrip("/") + "/"
         self.api_key = api_key
         self.user_id = None
 
@@ -59,7 +63,7 @@ class GraphNoteSearchService:
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.get(
-                    url=f"{self.api_base_url}ai/api/v1/graph/neighbors/{note_id}",
+                    url=f"{self.ai_api_base_url}ai/api/v1/graph/neighbors/{note_id}",
                     params={"depth": depth},
                     headers={"X-User-ID": str(user_id)},
                 )
@@ -224,4 +228,3 @@ class GraphNoteSearchService:
         return error_messages.get(
             status_code, f"검색 중 오류가 발생했습니다. (HTTP {status_code})"
         )
-

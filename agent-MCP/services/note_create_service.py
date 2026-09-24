@@ -10,7 +10,7 @@ class NoteCreateService:
     """LLM 대화 노트 생성 서비스"""
 
     def __init__(self, api_base_url: str, api_key: str):
-        self.api_base_url = api_base_url
+        self.api_base_url = api_base_url.rstrip("/") + "/"
         self.api_key = api_key
 
     async def note_create(
@@ -70,4 +70,3 @@ class NoteCreateService:
         except Exception as e:
             logger.error(f"❌ 예상치 못한 에러: {e}", exc_info=True)
             return f"검색 중 예상치 못한 오류가 발생했습니다: {str(e)} {content}"
-
