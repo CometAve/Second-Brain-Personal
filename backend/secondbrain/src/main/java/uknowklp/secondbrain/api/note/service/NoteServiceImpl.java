@@ -16,6 +16,7 @@ import uknowklp.secondbrain.api.note.domain.Note;
 import uknowklp.secondbrain.api.note.domain.DraftPromotion;
 import uknowklp.secondbrain.api.note.domain.NoteDocument;
 import uknowklp.secondbrain.api.note.dto.KnowledgeGraphEvent;
+import uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRecentResponse;
 import uknowklp.secondbrain.api.note.dto.NoteReminderResponse;
 import uknowklp.secondbrain.api.note.dto.NoteReminderResult;
@@ -328,6 +329,12 @@ public class NoteServiceImpl implements NoteService {
 
 		log.info("Found {} recent notes for user ID: {}", recentNotes.size(), userId);
 		return recentNotes;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<NoteGraphNodeResponse> getGraphNodes(Long userId) {
+		return noteRepository.findGraphNodesByUserId(userId);
 	}
 
 	@Override
