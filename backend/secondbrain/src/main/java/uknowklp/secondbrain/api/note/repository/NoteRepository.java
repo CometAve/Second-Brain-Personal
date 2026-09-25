@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import uknowklp.secondbrain.api.note.domain.Note;
+import uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse;
 
 public interface NoteRepository extends JpaRepository<Note, Long> {
 
@@ -25,6 +26,11 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 	 */
 	@Query("SELECT n FROM Note n WHERE n.user.id = :userId ORDER BY n.updatedAt DESC, n.id DESC")
 	List<Note> findRecentByUserId(@Param("userId") Long userId, Pageable pageable);
+
+	/** 사용자가 저장한 모든 노트의 그래프 표시용 정보만 조회합니다. */
+	@Query("SELECT new uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse(n.id, n.title, n.createdAt) " +
+		"FROM Note n WHERE n.user.id = :userId ORDER BY n.createdAt DESC, n.id DESC")
+	List<NoteGraphNodeResponse> findGraphNodesByUserId(@Param("userId") Long userId);
 
 	/**
 	 * 리마인더가 켜진 노트 목록 조회 (페이징 지원)

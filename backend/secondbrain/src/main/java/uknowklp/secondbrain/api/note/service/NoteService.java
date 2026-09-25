@@ -3,6 +3,7 @@ package uknowklp.secondbrain.api.note.service;
 import java.util.List;
 
 import uknowklp.secondbrain.api.note.domain.Note;
+import uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRecentResponse;
 import uknowklp.secondbrain.api.note.dto.NoteReminderResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
@@ -26,6 +27,9 @@ public interface NoteService {
 
 	// 최근 노트 목록 조회 (상위 10개)
 	List<NoteRecentResponse> getRecentNotes(Long userId);
+
+	// 저장된 모든 노트의 그래프 표시용 정보를 조회
+	List<NoteGraphNodeResponse> getGraphNodes(Long userId);
 
 	// 리마인더가 켜진 노트 목록 조회 (페이징 지원)
 	NoteReminderResponse getReminderNotes(Long userId, int page, int size);

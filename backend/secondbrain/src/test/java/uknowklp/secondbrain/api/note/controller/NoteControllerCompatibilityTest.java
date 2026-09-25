@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
+import uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse;
 import uknowklp.secondbrain.api.note.dto.NoteResponse;
 import uknowklp.secondbrain.api.note.service.NoteDraftPromotionService;
 import uknowklp.secondbrain.api.note.service.NoteService;
@@ -73,5 +75,31 @@ class NoteControllerCompatibilityTest {
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.success").value(true));
 		verify(noteService).createNote(eq(42L), any(NoteRequest.class));
+	}
+
+	@Test
+	void graphNodesReturnOnlySavedNoteMetadataInResponseEnvelope() throws Exception {
+		when(noteService.getGraphNodes(42L)).thenReturn(List.of(
+			new NoteGraphNodeResponse(12L, "제목", LocalDateTime.of(2026, 9, 24, 15, 30))));
+
+		mvc.perform(get("/api/notes/graph-nodes"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.success").value(true))
+			.andExpect(jsonPath("$.data[0].noteId").value(12))
+			.andExpect(jsonPath("$.data[0].title").value("제목"))
+			.andExpect(jsonPath("$.data[0].createdAt").value("2026-09-24T15:30:00"))
+			.andExpect(jsonPath("$.data[0].content").doesNotExist())
+			.andExpect(jsonPath("$.data[0].userId").doesNotExist());
+		verify(noteService).getGraphNodes(42L);
+	}
+
+	@Test
+	void graphNodesReturnEmptyArrayForNoSavedNotes() throws Exception {
+		when(noteService.getGraphNodes(42L)).thenReturn(List.of());
+
+		mvc.perform(get("/api/notes/graph-nodes"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data").isArray())
+			.andExpect(jsonPath("$.data").isEmpty());
 	}
 }

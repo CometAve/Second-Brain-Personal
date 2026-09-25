@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uknowklp.secondbrain.api.note.domain.Note;
 import uknowklp.secondbrain.api.note.dto.NoteDeleteRequest;
+import uknowklp.secondbrain.api.note.dto.NoteGraphNodeResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRecentResponse;
 import uknowklp.secondbrain.api.note.dto.NoteReminderResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
@@ -148,6 +149,13 @@ public class NoteController {
 		// 200 OK 응답 생성 및 반환 (data는 null 가능)
 		BaseResponse<List<NoteRecentResponse>> response = new BaseResponse<>(recentNotes);
 		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("/graph-nodes")
+	@Operation(summary = "저장된 노트 그래프 노드 조회", description = "현재 사용자의 모든 저장된 노트 ID, 제목, 생성 시각을 조회합니다")
+	public ResponseEntity<BaseResponse<List<NoteGraphNodeResponse>>> getGraphNodes(
+		@AuthenticationPrincipal CustomUserDetails userDetails) {
+		return ResponseEntity.ok(new BaseResponse<>(noteService.getGraphNodes(userDetails.getUser().getId())));
 	}
 
 	// 리마인더가 켜진 노트 목록 조회 (페이징 지원)
