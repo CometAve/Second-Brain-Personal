@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { env } from '@/config/env';
 
+type GoogleLoginButtonText = 'signin' | 'signup' | 'continue';
+
 interface GoogleLoginButtonProps {
-  text?: 'signin' | 'signup' | 'continue';
+  text?: GoogleLoginButtonText;
 }
+
+const GOOGLE_LOGIN_BUTTON_LABELS = {
+  signin: 'Sign in with Google',
+  signup: 'Sign up with Google',
+  continue: 'Continue with Google',
+} as const satisfies Record<GoogleLoginButtonText, string>;
 
 /**
  * Google Login Button Component
@@ -21,12 +29,6 @@ interface GoogleLoginButtonProps {
 export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-
-  const buttonText = {
-    signin: 'Sign in with Google',
-    signup: 'Sign up with Google',
-    continue: 'Continue with Google',
-  };
 
   function handleLogin() {
     window.location.href = env.oauth2LoginUrl;
@@ -92,7 +94,7 @@ export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
       onMouseDown={() => setIsPressed(true)}
       onMouseUp={() => setIsPressed(false)}
       type="button"
-      aria-label={buttonText[text]}
+      aria-label={GOOGLE_LOGIN_BUTTON_LABELS[text]}
       style={buttonStyle}
     >
       {/* Google "G" Logo - Official SVG with standard colors */}
@@ -123,7 +125,7 @@ export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
       </svg>
 
       {/* Button Text */}
-      <span style={{ fontWeight: 500 }}>{buttonText[text]}</span>
+      <span style={{ fontWeight: 500 }}>{GOOGLE_LOGIN_BUTTON_LABELS[text]}</span>
     </button>
   );
 }
