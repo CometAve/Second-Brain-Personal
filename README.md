@@ -40,6 +40,8 @@ docker compose --env-file infra/local/.env --profile backend up -d --build --wai
 
 ## 개발 도구와 커밋 규칙
 
+Follow the shared quality standards and completion criteria in [AGENTS.md](AGENTS.md), and consult the `.agents/skills/` guidance relevant to the change. The [development standards audit](docs/development-standards-audit.md) records how the 82 legacy files were assessed, the verified versions, and the validation results.
+
 Playwright CLI 공식 스킬은 `.agents/skills/playwright-cli/`에 있으며 실행 결과물 `.playwright-cli/`는 Git에서 제외합니다. 공통 commitlint는 `type(scope): 한국어 설명` 형식을 검사합니다. 새 clone과 각 worktree에서의 훅 활성화 방법 및 모듈 scope는 [커밋 규칙](docs/commit-conventions.md)을 따릅니다. 타입 검사·린트·빌드는 메시지 검사와 별도로 실행합니다.
 
 ## 모바일·Wear OS 제거
