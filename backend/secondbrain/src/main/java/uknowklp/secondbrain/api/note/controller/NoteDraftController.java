@@ -154,7 +154,7 @@ public class NoteDraftController {
 		User user = userDetails.getUser();
 		log.info("Draft 삭제 요청 - UserId: {}, NoteId: {}", user.getId(), noteId);
 
-		noteDraftService.deleteDraft(noteId, user.getId());
+		noteDraftService.deleteDraft(noteId, user.getId(), true);
 
 		return ResponseEntity.ok(new BaseResponse<>(BaseResponseStatus.SUCCESS));
 	}

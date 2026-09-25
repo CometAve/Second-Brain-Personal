@@ -12,6 +12,9 @@ public interface NoteService {
 	// 노트 생성
 	Note createNote(Long userId, NoteRequest request);
 
+	// Draft 승격과 멱등성 기록은 같은 DB 트랜잭션에서 커밋합니다.
+	Note createNoteFromDraft(Long userId, String draftId, NoteRequest request);
+
 	// 노트 조회 (권한 검증 포함)
 	NoteResponse getNoteById(Long noteId, Long userId);
 

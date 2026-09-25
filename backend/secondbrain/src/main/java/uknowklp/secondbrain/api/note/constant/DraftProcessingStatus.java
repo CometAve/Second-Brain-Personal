@@ -31,7 +31,7 @@ public final class DraftProcessingStatus {
 	 * @return 처리 중 여부
 	 */
 	public static boolean isProcessing(String status) {
-		return PROCESSING.equals(status);
+		return PROCESSING.equals(status) || (status != null && status.startsWith(PROCESSING + ":"));
 	}
 
 	/**

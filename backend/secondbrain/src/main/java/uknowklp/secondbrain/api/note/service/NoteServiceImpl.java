@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uknowklp.secondbrain.api.note.domain.Note;
+import uknowklp.secondbrain.api.note.domain.DraftPromotion;
 import uknowklp.secondbrain.api.note.domain.NoteDocument;
 import uknowklp.secondbrain.api.note.dto.KnowledgeGraphEvent;
 import uknowklp.secondbrain.api.note.dto.NoteRecentResponse;
@@ -20,6 +22,7 @@ import uknowklp.secondbrain.api.note.dto.NoteReminderResult;
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
 import uknowklp.secondbrain.api.note.dto.NoteResponse;
 import uknowklp.secondbrain.api.note.repository.NoteRepository;
+import uknowklp.secondbrain.api.note.repository.DraftPromotionClaimWriter;
 import uknowklp.secondbrain.api.user.domain.User;
 import uknowklp.secondbrain.api.user.service.UserService;
 import uknowklp.secondbrain.global.exception.BaseException;
@@ -32,6 +35,7 @@ import uknowklp.secondbrain.global.response.BaseResponseStatus;
 public class NoteServiceImpl implements NoteService {
 
 	private final NoteRepository noteRepository;
+	private final DraftPromotionClaimWriter draftPromotionClaimWriter;
 	private final UserService userService;
 	private final NoteSearchService noteSearchService;
 	private final KnowledgeGraphProducerService knowledgeGraphProducerService;
@@ -80,6 +84,17 @@ public class NoteServiceImpl implements NoteService {
 			savedNote.getContent()
 		);
 
+		return savedNote;
+	}
+
+	@Override
+	public Note createNoteFromDraft(Long userId, String draftId, NoteRequest request) {
+		// Claim the draft ID before creating any note or external index/event side effects.
+		// A competing transaction blocks on this primary key, then fails before note creation.
+		DraftPromotion promotion = draftPromotionClaimWriter.insert(draftId, userId);
+		Note savedNote = createNote(userId, request);
+		promotion.complete(savedNote.getId());
+		draftPromotionClaimWriter.flush();
 		return savedNote;
 	}
 

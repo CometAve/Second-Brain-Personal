@@ -20,17 +20,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uknowklp.secondbrain.api.note.domain.Note;
-import uknowklp.secondbrain.api.note.domain.NoteDraft;
 import uknowklp.secondbrain.api.note.dto.NoteDeleteRequest;
 import uknowklp.secondbrain.api.note.dto.NoteRecentResponse;
 import uknowklp.secondbrain.api.note.dto.NoteReminderResponse;
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
 import uknowklp.secondbrain.api.note.dto.NoteResponse;
-import uknowklp.secondbrain.api.note.constant.DraftProcessingStatus;
-import uknowklp.secondbrain.api.note.service.NoteDraftService;
+import uknowklp.secondbrain.api.note.service.NoteDraftPromotionService;
 import uknowklp.secondbrain.api.note.service.NoteService;
 import uknowklp.secondbrain.api.user.domain.User;
-import uknowklp.secondbrain.global.exception.BaseException;
 import uknowklp.secondbrain.global.response.BaseResponse;
 import uknowklp.secondbrain.global.response.BaseResponseStatus;
 import uknowklp.secondbrain.global.security.jwt.dto.CustomUserDetails;
@@ -45,7 +42,7 @@ import uknowklp.secondbrain.global.security.jwt.dto.CustomUserDetails;
 public class NoteController {
 
 	private final NoteService noteService;
-	private final NoteDraftService noteDraftService;
+	private final NoteDraftPromotionService noteDraftPromotionService;
 
 	// 노트 생성
 	@PostMapping
@@ -196,98 +193,10 @@ public class NoteController {
 	public ResponseEntity<BaseResponse<NoteResponse>> createNoteFromDraft(
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable String draftId) {
-
-		User user = userDetails.getUser();
-		log.info("Draft → DB 저장 요청 - UserId: {}, DraftId: {}", user.getId(), draftId);
-
-		// ===== Step 1: 처리 상태 확인 및 기록 =====
-		// 이미 처리 중이거나 완료된 경우 차단
-		String processingStatus = noteDraftService.getProcessingStatus(draftId);
-
-		if (processingStatus != null) {
-			if (DraftProcessingStatus.isProcessing(processingStatus)) {
-				// 현재 처리 중
-				log.warn("Draft 이미 처리 중 - DraftId: {}", draftId);
-				return ResponseEntity.status(HttpStatus.CONFLICT)
-					.body(new BaseResponse<>(BaseResponseStatus.DRAFT_ALREADY_PROCESSING));
-
-			} else {
-				// 이미 완료됨 (DB Note ID를 문자열로 저장했음)
-				try {
-					Long dbNoteId = DraftProcessingStatus.parseDbNoteId(processingStatus);
-					log.info("Draft 이미 처리 완료 - DraftId: {}, DB NoteId: {}",
-						draftId, dbNoteId);
-
-					// 기존 Note 반환
-					NoteResponse response = noteService.getNoteById(dbNoteId, user.getId());
-					return ResponseEntity.ok(new BaseResponse<>(response));
-
-				} catch (NumberFormatException e) {
-					// Redis 데이터 손상 (예상치 못한 값)
-					log.error("Redis 데이터 손상 - DraftId: {}, 손상된 Status: {}", draftId, processingStatus, e);
-					// 손상된 키 삭제 후 재처리 허용
-					noteDraftService.rollbackProcessingStatus(draftId);
-					// 아래 정상 처리 로직으로 진행
-				}
-			}
-		}
-
-		// 처리 시작 표시 (원자적)
-		boolean marked = noteDraftService.markAsProcessing(draftId);
-		if (!marked) {
-			// Race condition: 다른 요청이 먼저 처리 시작
-			log.warn("Draft 처리 경쟁 조건 발생 - DraftId: {}", draftId);
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-				.body(new BaseResponse<>(BaseResponseStatus.DRAFT_ALREADY_PROCESSING));
-		}
-
-		try {
-			// ===== Step 2: Draft 조회 =====
-			NoteDraft draft = noteDraftService.getDraft(draftId, user.getId());
-
-			// ===== Step 3: Note 생성 (DB Transaction) =====
-			NoteRequest request = NoteRequest.builder()
-				.title(draft.getTitle())
-				.content(draft.getContent())
-				.build();
-
-			Note savedNote = noteService.createNote(user.getId(), request);
-			Long dbNoteId = savedNote.getId();
-			log.info("✅ Note 생성 및 KnowledgeGraph 이벤트 발행 완료 - DB NoteId: {}", dbNoteId);
-
-			// ===== Step 4: 처리 완료 기록 =====
-			noteDraftService.markAsCompleted(draftId, dbNoteId);
-
-			// ===== Step 5: Draft 정리 (Best Effort) =====
-			try {
-				noteDraftService.deleteDraft(draftId, user.getId());
-			} catch (Exception e) {
-				// Draft 삭제 실패해도 문제없음
-				// - 처리 완료 기록되어 있어 재처리 안 됨
-				// - TTL 24시간 후 자동 삭제
-				log.warn("Draft 삭제 실패했지만 처리 완료 상태 - DraftId: {}", draftId, e);
-			}
-
-			// ===== Step 6: 응답 반환 =====
-			NoteResponse response = NoteResponse.from(savedNote);
-			log.info("Draft → DB 저장 완료 - DraftId: {} → DB NoteId: {}",
-				draftId, dbNoteId);
-
-			return ResponseEntity.status(HttpStatus.CREATED)
-				.body(new BaseResponse<>(response));
-
-		} catch (BaseException e) {
-			// 비즈니스 검증 실패 (빈 내용 등)
-			noteDraftService.rollbackProcessingStatus(draftId);
-			log.warn("Draft 검증 실패 - DraftId: {}, Reason: {}",
-				draftId, e.getMessage());
-			throw e;
-
-		} catch (Exception e) {
-			// 시스템 오류
-			noteDraftService.rollbackProcessingStatus(draftId);
-			log.error("Draft → DB 저장 실패 - DraftId: {}", draftId, e);
-			throw new BaseException(BaseResponseStatus.NOTE_CREATE_FAILED);
-		}
+		NoteDraftPromotionService.Result result = noteDraftPromotionService.promote(
+			draftId, userDetails.getUser().getId());
+		return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK)
+			.body(new BaseResponse<>(result.note()));
 	}
+
 }
