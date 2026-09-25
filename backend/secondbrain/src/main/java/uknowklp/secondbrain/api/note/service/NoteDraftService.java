@@ -2,6 +2,7 @@ package uknowklp.secondbrain.api.note.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -18,14 +19,18 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.SessionCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uknowklp.secondbrain.api.note.constant.DraftProcessingStatus;
 import uknowklp.secondbrain.api.note.domain.NoteDraft;
+import uknowklp.secondbrain.api.note.domain.DraftPromotion;
 import uknowklp.secondbrain.api.note.dto.NoteDraftRequest;
 import uknowklp.secondbrain.api.note.dto.NoteDraftResponse;
+import uknowklp.secondbrain.api.note.repository.DraftPromotionRepository;
 import uknowklp.secondbrain.global.exception.BaseException;
 import uknowklp.secondbrain.global.response.BaseResponseStatus;
 
@@ -53,16 +58,109 @@ public class NoteDraftService {
 	private final RedisTemplate<String, NoteDraft> noteDraftRedisTemplate;
 	private final RedisTemplate<String, Object> redisTemplate; // SET 관리용
 	private final StringRedisTemplate stringRedisTemplate; // 처리 상태 추적용
+	private final DraftLockService draftLockService;
+	private final DraftPromotionRepository draftPromotionRepository;
 
 	// Redis Key Patterns
 	private static final String DRAFT_PREFIX = "draft:note:";
 	private static final String USER_DRAFTS_PREFIX = "user:drafts:";
 	private static final String PROCESSED_PREFIX = "processed:draft:";
+	private static final String DELETED_PREFIX = "deleted:draft:";
 
 	// TTL: 24시간
 	private static final Duration DRAFT_TTL = Duration.ofHours(24);
 	// 처리 완료 기록 TTL: 24시간 (Draft와 동일하게 설정하여 완벽한 중복 방지)
 	private static final Duration PROCESSED_TTL = Duration.ofHours(24);
+	private static final DefaultRedisScript<Long> ROLLBACK_PROCESSING = new DefaultRedisScript<>(
+		"if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end",
+		Long.class);
+	private static final DefaultRedisScript<Long> SAVE_DRAFT = new DefaultRedisScript<>(
+		"if redis.call('GET', KEYS[2]) ~= ARGV[1] then return -3 end " +
+		"if redis.call('EXISTS', KEYS[3], KEYS[5]) > 0 then return -4 end " +
+		"local current = redis.call('GET', KEYS[1]); " +
+		"if ARGV[2] == '0' then if current then return -2 end " +
+		"elseif current ~= ARGV[3] then return -2 end " +
+		"local kind = redis.call('TYPE', KEYS[4]).ok; " +
+		"if kind ~= 'none' and kind ~= 'set' then return -5 end " +
+		"redis.call('SADD', KEYS[4], ARGV[6]); " +
+		"redis.call('PEXPIRE', KEYS[4], ARGV[5]); " +
+		"redis.call('PSETEX', KEYS[1], ARGV[5], ARGV[4]); return 1",
+		Long.class);
+	private static final DefaultRedisScript<Long> DELETE_DRAFT = new DefaultRedisScript<>(
+		"if redis.call('GET', KEYS[2]) ~= ARGV[1] then return -3 end " +
+		"if ARGV[3] == '0' and redis.call('EXISTS', KEYS[3]) == 1 then return -4 end " +
+		"if redis.call('GET', KEYS[1]) ~= ARGV[2] then return -2 end " +
+		"if ARGV[4] == '1' then redis.call('PSETEX', KEYS[4], ARGV[5], ARGV[6]) end; " +
+		"return redis.call('DEL', KEYS[1])",
+		Long.class);
+	private static final DefaultRedisScript<Long> START_PROMOTION = new DefaultRedisScript<>(
+		"if redis.call('GET', KEYS[2]) ~= ARGV[1] then return -3 end " +
+		"if redis.call('GET', KEYS[1]) ~= ARGV[2] then return -2 end " +
+		"local status = redis.call('GET', KEYS[3]); " +
+		"if status and status ~= 'PROCESSING' and string.sub(status, 1, 11) ~= 'PROCESSING:' then return -4 end " +
+		"redis.call('PSETEX', KEYS[3], ARGV[4], ARGV[3]); return 1",
+		Long.class);
+	private record DraftSnapshot(String raw, NoteDraft draft) {
+	}
+	public record PromotionStart(NoteDraft draft, String processingToken) {
+	}
+
+	private DraftSnapshot readDraftSnapshot(String noteId) {
+		String raw = stringRedisTemplate.opsForValue().get(DRAFT_PREFIX + noteId);
+		if (raw == null) return null;
+		NoteDraft draft = draftSerializer().deserialize(raw.getBytes(StandardCharsets.UTF_8));
+		if (draft == null) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+		return new DraftSnapshot(raw, draft);
+	}
+
+	private String serializeDraft(NoteDraft draft) {
+		byte[] bytes = draftSerializer().serialize(draft);
+		if (bytes == null) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+		return new String(bytes, StandardCharsets.UTF_8);
+	}
+
+	private String serializeIndexMember(String noteId) {
+		byte[] bytes = indexSerializer().serialize(noteId);
+		if (bytes == null) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+		return new String(bytes, StandardCharsets.UTF_8);
+	}
+
+	@SuppressWarnings("unchecked")
+	private RedisSerializer<NoteDraft> draftSerializer() {
+		return (RedisSerializer<NoteDraft>) noteDraftRedisTemplate.getValueSerializer();
+	}
+
+	@SuppressWarnings("unchecked")
+	private RedisSerializer<Object> indexSerializer() {
+		return (RedisSerializer<Object>) redisTemplate.getValueSerializer();
+	}
+
+	PromotionStart beginPromotion(String draftId, Long userId, String lockToken, LocalDateTime staleCutoff) {
+		try {
+			DraftSnapshot snapshot = readDraftSnapshot(draftId);
+			if (snapshot == null) throw new BaseException(BaseResponseStatus.DRAFT_NOT_FOUND);
+			if (!userId.equals(snapshot.draft().getUserId())) {
+				throw new BaseException(BaseResponseStatus.DRAFT_ACCESS_DENIED);
+			}
+			if (staleCutoff != null && !snapshot.draft().getLastModified().isBefore(staleCutoff)) {
+				return null;
+			}
+			String processingToken = UUID.randomUUID().toString();
+			Long started = stringRedisTemplate.execute(START_PROMOTION,
+				List.of(DRAFT_PREFIX + draftId, DraftLockService.key(draftId), PROCESSED_PREFIX + draftId),
+				lockToken, snapshot.raw(), DraftProcessingStatus.PROCESSING + ":" + processingToken,
+				String.valueOf(PROCESSED_TTL.toMillis()));
+			if (started == null) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+			if (started == -4L) throw new BaseException(BaseResponseStatus.DRAFT_ALREADY_PROCESSING);
+			if (started != 1L) throw new BaseException(BaseResponseStatus.DRAFT_VERSION_CONFLICT);
+			return new PromotionStart(snapshot.draft(), processingToken);
+		} catch (BaseException error) {
+			throw error;
+		} catch (Exception error) {
+			log.error("Draft promotion start failed - DraftId: {}", draftId, error);
+			throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+		}
+	}
 
 	/**
 	 * Draft 저장 (Redis)
@@ -83,6 +181,13 @@ public class NoteDraftService {
 	 * @return 저장된 NoteDraft 객체 (version 포함)
 	 */
 	public NoteDraft saveDraft(Long userId, NoteDraftRequest request) {
+		String noteId = request.getNoteId() != null
+			? request.getNoteId()
+			: UUID.randomUUID().toString();
+		return draftLockService.withLock(noteId, token -> saveDraftLocked(userId, noteId, request, token));
+	}
+
+	private NoteDraft saveDraftLocked(Long userId, String noteId, NoteDraftRequest request, String token) {
 		try {
 			// 최소 검증: title 또는 content 중 하나라도 있어야 함
 			if (!request.isValid()) {
@@ -90,17 +195,29 @@ public class NoteDraftService {
 				throw new BaseException(BaseResponseStatus.DRAFT_EMPTY);
 			}
 
-			// noteId가 없으면 새 UUID 생성 (새 노트)
-			String noteId = request.getNoteId() != null
-				? request.getNoteId()
-				: UUID.randomUUID().toString();
+			// A committed promotion forbids a late autosave from recreating this draft.
+			DraftPromotion promotion = draftPromotionRepository.findById(noteId).orElse(null);
+			if (promotion != null) {
+				if (!promotion.getUserId().equals(userId)) {
+					throw new BaseException(BaseResponseStatus.DRAFT_ACCESS_DENIED);
+				}
+				throw new BaseException(BaseResponseStatus.DRAFT_ALREADY_PROCESSING);
+			}
+			String status = getProcessingStatus(noteId);
+			if (status != null) {
+				throw new BaseException(BaseResponseStatus.DRAFT_ALREADY_PROCESSING);
+			}
 
 			// 기존 draft 조회 (충돌 감지)
-			NoteDraft existingDraft = getDraftOrNull(noteId);
+			DraftSnapshot snapshot = readDraftSnapshot(noteId);
+			NoteDraft existingDraft = snapshot == null ? null : snapshot.draft();
 
 			// Version 충돌 검사 (Optimistic Locking)
 			// v2: version 필수화로 항상 검증 수행
 			if (existingDraft != null) {
+				if (!existingDraft.getUserId().equals(userId)) {
+					throw new BaseException(BaseResponseStatus.DRAFT_ACCESS_DENIED);
+				}
 				// 기존 Draft가 존재하는 경우: version 일치 여부 확인
 				if (!existingDraft.getVersion().equals(request.getVersion())) {
 					log.warn("Version conflict - NoteId: {}, Client: {}, Server: {}",
@@ -121,14 +238,17 @@ public class NoteDraftService {
 				? updateExistingDraft(existingDraft, request)
 				: createNewDraft(noteId, userId, request);
 
-			// Redis 저장 (Draft 데이터)
-			String draftKey = DRAFT_PREFIX + noteId;
-			noteDraftRedisTemplate.opsForValue().set(draftKey, draft, DRAFT_TTL);
-
-			// 사용자별 Draft SET에 추가 (성능 최적화)
-			String userDraftsKey = USER_DRAFTS_PREFIX + userId;
-			redisTemplate.opsForSet().add(userDraftsKey, noteId);
-			redisTemplate.expire(userDraftsKey, DRAFT_TTL);
+			// The lock token, exact previous snapshot, status, draft, and list index
+			// are checked/changed in one Redis command. A lease-expired writer cannot
+			// overwrite a newer save, and an index failure cannot hide a saved draft.
+			Long saved = stringRedisTemplate.execute(SAVE_DRAFT,
+				List.of(DRAFT_PREFIX + noteId, DraftLockService.key(noteId),
+					PROCESSED_PREFIX + noteId, USER_DRAFTS_PREFIX + userId, DELETED_PREFIX + noteId),
+				token, snapshot == null ? "0" : "1", snapshot == null ? "" : snapshot.raw(),
+				serializeDraft(draft), String.valueOf(DRAFT_TTL.toMillis()), serializeIndexMember(noteId));
+			if (saved == null || saved == -5L) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+			if (saved == -4L) throw new BaseException(BaseResponseStatus.DRAFT_ALREADY_PROCESSING);
+			if (saved != 1L) throw new BaseException(BaseResponseStatus.DRAFT_VERSION_CONFLICT);
 
 			log.info("Draft 저장 완료 - NoteId: {}, UserId: {}, Version: {}",
 				noteId, userId, draft.getVersion());
@@ -152,6 +272,11 @@ public class NoteDraftService {
 	 * @return NoteDraft
 	 */
 	public NoteDraft getDraft(String noteId, Long userId) {
+		DraftPromotion promotion = draftPromotionRepository.findById(noteId).orElse(null);
+		if (promotion != null) {
+			throw new BaseException(promotion.getUserId().equals(userId)
+				? BaseResponseStatus.DRAFT_NOT_FOUND : BaseResponseStatus.DRAFT_ACCESS_DENIED);
+		}
 		NoteDraft draft = getDraftOrNull(noteId);
 
 		if (draft == null) {
@@ -198,21 +323,29 @@ public class NoteDraftService {
 			}
 
 			// 2단계: noteId → Redis key 변환
+			Set<String> promotedIds = new java.util.HashSet<>();
+			for (DraftPromotion promotion : draftPromotionRepository.findAllById(
+				noteIdSet.stream().map(Object::toString).toList())) {
+				promotedIds.add(promotion.getDraftId());
+			}
 			List<String> draftKeys = noteIdSet.stream()
 				.map(Object::toString)
+				.filter(noteId -> !promotedIds.contains(noteId))
 				.map(noteId -> DRAFT_PREFIX + noteId)
 				.collect(Collectors.toList());
+			if (draftKeys.isEmpty()) return Collections.emptyList();
 
 			// 3단계: MGET으로 한 번에 조회 (N+1 문제 해결)
 			List<NoteDraft> drafts = noteDraftRedisTemplate.opsForValue().multiGet(draftKeys);
 
 			if (drafts == null) {
-				return Collections.emptyList();
+				throw new BaseException(BaseResponseStatus.REDIS_ERROR);
 			}
 
 			// 4단계: 정렬 및 변환
 			List<NoteDraftResponse> responses = drafts.stream()
 				.filter(Objects::nonNull)
+				.filter(draft -> userId.equals(draft.getUserId()))
 				.sorted(Comparator.comparing(NoteDraft::getLastModified).reversed())
 				.map(NoteDraftResponse::from)
 				.collect(Collectors.toList());
@@ -220,9 +353,11 @@ public class NoteDraftService {
 			log.info("Draft 목록 조회 완료 - UserId: {}, Count: {}", userId, responses.size());
 			return responses;
 
+		} catch (BaseException e) {
+			throw e;
 		} catch (Exception e) {
 			log.error("Draft 목록 조회 실패 - UserId: {}", userId, e);
-			return Collections.emptyList();
+			throw new BaseException(BaseResponseStatus.REDIS_ERROR);
 		}
 	}
 
@@ -251,21 +386,66 @@ public class NoteDraftService {
 	 * @param throwOnFailure true면 실패 시 예외 발생 (트랜잭션 롤백용)
 	 */
 	public void deleteDraft(String noteId, Long userId, boolean throwOnFailure) {
+		draftLockService.withLock(noteId, token -> {
+			deleteDraftLocked(noteId, userId, throwOnFailure, token, true);
+			return null;
+		});
+	}
+
+	void deleteDraftAfterPromotion(String noteId, Long userId, String token) {
+		deleteDraftLocked(noteId, userId, false, token, false);
+	}
+
+	private void deleteDraftLocked(String noteId, Long userId, boolean throwOnFailure,
+		String token, boolean explicitDelete) {
 		try {
+			DraftPromotion promotion = draftPromotionRepository.findById(noteId).orElse(null);
+			if (promotion != null && !promotion.getUserId().equals(userId)) {
+				throw new BaseException(BaseResponseStatus.DRAFT_ACCESS_DENIED);
+			}
 			// 소유권 검증
-			NoteDraft draft = getDraft(noteId, userId);
+			DraftSnapshot snapshot = readDraftSnapshot(noteId);
+			NoteDraft draft = snapshot == null ? null : snapshot.draft();
+			if (draft == null) {
+				if (promotion != null && promotion.getUserId().equals(userId)) {
+					return; // already cleaned up after a successful promotion
+				}
+				throw new BaseException(promotion == null
+					? BaseResponseStatus.DRAFT_NOT_FOUND : BaseResponseStatus.DRAFT_ACCESS_DENIED);
+			}
+			if (!draft.getUserId().equals(userId)) {
+				throw new BaseException(BaseResponseStatus.DRAFT_ACCESS_DENIED);
+			}
 
 			// Draft 데이터 삭제
-			String draftKey = DRAFT_PREFIX + noteId;
-			Boolean deleted = noteDraftRedisTemplate.delete(draftKey);
+			Long deleted = stringRedisTemplate.execute(DELETE_DRAFT,
+				List.of(DRAFT_PREFIX + noteId, DraftLockService.key(noteId),
+					PROCESSED_PREFIX + noteId, DELETED_PREFIX + noteId),
+				token, snapshot.raw(), promotion == null && explicitDelete ? "0" : "1",
+				explicitDelete && promotion == null ? "1" : "0",
+				String.valueOf(DRAFT_TTL.toMillis()), String.valueOf(userId));
+			if (deleted == null) throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+			if (deleted == -4L) throw new BaseException(BaseResponseStatus.DRAFT_ALREADY_PROCESSING);
+			if (deleted != 1L) throw new BaseException(BaseResponseStatus.DRAFT_VERSION_CONFLICT);
 
-			// 사용자별 SET에서도 제거
+			// The data key is already absent. A stale list member is filtered on
+			// read and expires; a list-index failure must not report data deletion
+			// as failed after it actually happened.
 			String userDraftsKey = USER_DRAFTS_PREFIX + userId;
-			redisTemplate.opsForSet().remove(userDraftsKey, noteId);
+			try {
+				redisTemplate.opsForSet().remove(userDraftsKey, noteId);
+			} catch (Exception indexError) {
+				log.warn("Draft list index cleanup failed - NoteId: {}", noteId, indexError);
+			}
 
 			log.info("Draft 삭제 완료 - NoteId: {}, UserId: {}, Deleted: {}",
-				noteId, userId, deleted);
+					noteId, userId, deleted);
 
+		} catch (BaseException e) {
+			if (throwOnFailure) {
+				throw e;
+			}
+			log.warn("Draft best-effort deletion failed - NoteId: {}, UserId: {}", noteId, userId, e);
 		} catch (Exception e) {
 			log.error("Draft 삭제 실패 - NoteId: {}, UserId: {}", noteId, userId, e);
 
@@ -315,11 +495,7 @@ public class NoteDraftService {
 
 			try (Cursor<String> cursor = noteDraftRedisTemplate.scan(options)) {
 				while (cursor.hasNext()) {
-					try {
-						allKeys.add(cursor.next());
-					} catch (Exception e) {
-						log.warn("Draft 스캔 중 개별 오류 발생 - 건너뜀", e);
-					}
+					allKeys.add(cursor.next());
 				}
 			}
 
@@ -332,7 +508,7 @@ public class NoteDraftService {
 			List<NoteDraft> allDrafts = noteDraftRedisTemplate.opsForValue().multiGet(allKeys);
 
 			if (allDrafts == null) {
-				return Collections.emptyList();
+				throw new BaseException(BaseResponseStatus.REDIS_ERROR);
 			}
 
 			// 3단계: 시간 기준 필터링
@@ -346,9 +522,11 @@ public class NoteDraftService {
 				minutes, allKeys.size(), staleDrafts.size());
 			return staleDrafts;
 
+		} catch (BaseException e) {
+			throw e;
 		} catch (Exception e) {
 			log.error("오래된 Draft 조회 실패", e);
-			return Collections.emptyList();
+			throw new BaseException(BaseResponseStatus.REDIS_ERROR);
 		}
 	}
 
@@ -376,7 +554,7 @@ public class NoteDraftService {
 
 		} catch (Exception e) {
 			log.error("Draft 조회 실패 - Key: {}", key, e);
-			return null;
+			throw new BaseException(BaseResponseStatus.REDIS_ERROR);
 		}
 	}
 
@@ -412,8 +590,28 @@ public class NoteDraftService {
 	 * @return 처리 상태 (null=미처리, "PROCESSING"=처리중, "{dbNoteId}"=완료)
 	 */
 	public String getProcessingStatus(String draftId) {
-		String key = PROCESSED_PREFIX + draftId;
-		return stringRedisTemplate.opsForValue().get(key);
+		try {
+			return stringRedisTemplate.opsForValue().get(PROCESSED_PREFIX + draftId);
+		} catch (Exception error) {
+			log.error("Draft processing status read failed - DraftId: {}", draftId, error);
+			throw new BaseException(BaseResponseStatus.REDIS_ERROR);
+		}
+	}
+
+	String setProcessingStatus(String draftId) {
+		String token = UUID.randomUUID().toString();
+		stringRedisTemplate.opsForValue().set(
+			PROCESSED_PREFIX + draftId, DraftProcessingStatus.PROCESSING + ":" + token, PROCESSED_TTL);
+		return token;
+	}
+
+	void rollbackProcessingStatus(String draftId, String token) {
+		try {
+			stringRedisTemplate.execute(ROLLBACK_PROCESSING, List.of(PROCESSED_PREFIX + draftId),
+				DraftProcessingStatus.PROCESSING + ":" + token);
+		} catch (Exception error) {
+			log.warn("Draft processing rollback failed - DraftId: {}", draftId, error);
+		}
 	}
 
 	/**

@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import uknowklp.secondbrain.api.note.dto.NoteRequest;
 import uknowklp.secondbrain.api.note.dto.NoteResponse;
-import uknowklp.secondbrain.api.note.service.NoteDraftService;
+import uknowklp.secondbrain.api.note.service.NoteDraftPromotionService;
 import uknowklp.secondbrain.api.note.service.NoteService;
 import uknowklp.secondbrain.api.user.domain.User;
 import uknowklp.secondbrain.global.config.JacksonConfig;
@@ -40,7 +40,7 @@ class NoteControllerCompatibilityTest {
 		var details = new CustomUserDetails(User.builder().id(42L).email("local@example.test").build());
 		SecurityContextHolder.getContext().setAuthentication(
 			new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
-		mvc = MockMvcBuilders.standaloneSetup(new NoteController(noteService, mock(NoteDraftService.class)))
+		mvc = MockMvcBuilders.standaloneSetup(new NoteController(noteService, mock(NoteDraftPromotionService.class)))
 			.setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
 			.setMessageConverters(new JacksonJsonHttpMessageConverter(new JacksonConfig().jsonMapper()))
 			.build();
