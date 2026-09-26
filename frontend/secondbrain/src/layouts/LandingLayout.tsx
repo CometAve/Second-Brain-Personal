@@ -1,16 +1,12 @@
 import type { ReactNode } from 'react';
 import { BaseLayout } from '@/layouts/BaseLayout';
-
 interface LandingLayoutProps {
   children: ReactNode;
 }
-
-const LandingLayout = ({ children }: LandingLayoutProps) => {
+export function LandingLayout({ children }: LandingLayoutProps) {
   return (
     <BaseLayout>
-      <div className="flex h-screen items-center justify-center">{children}</div>
+      <div className="h-full overflow-y-auto">{children}</div>
     </BaseLayout>
   );
-};
-
-export { LandingLayout };
+}

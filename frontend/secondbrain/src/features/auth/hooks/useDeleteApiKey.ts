@@ -1,26 +1,18 @@
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { deleteApiKey } from '@/features/auth/api/apiKey';
 
-/**
- * API Key 삭제 React Query Hook
- *
- * @returns {UseMutationResult} mutate 함수 및 상태 (isPending, isError 등)
- *
- * @example
- * const { mutate, isPending } = useDeleteApiKey();
- * mutate(undefined, {
- *   onSuccess: () => console.log('삭제 완료')
- * });
- */
+import { deleteApiKey } from '@/features/auth/api/apiKey';
+import { StaleSessionError, assertCurrentSession } from '@/stores/authStore';
+
 export function useDeleteApiKey() {
   return useMutation({
-    mutationFn: deleteApiKey,
-    onSuccess: () => {
-      toast.success('API Key가 삭제되었습니다.');
+    mutationFn: async (epoch: number) => {
+      await deleteApiKey(epoch);
+      assertCurrentSession(epoch);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'API Key 삭제에 실패했습니다.');
+    onSuccess: () => toast.success('API Key가 삭제되었습니다.'),
+    onError: (error) => {
+      if (!(error instanceof StaleSessionError)) toast.error('API Key 삭제에 실패했습니다.');
     },
   });
 }

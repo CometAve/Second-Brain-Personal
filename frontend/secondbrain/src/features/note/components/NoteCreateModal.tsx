@@ -80,13 +80,13 @@ export function NoteCreateModal({ isOpen, onClose, onDelete }: NoteCreateModalPr
         {/* Title + 에디터 영역 */}
         <div className="absolute inset-10 flex flex-col gap-4">
           {/* Title input */}
-          <NoteTitleInput value={title} onChange={setTitle} placeholder="Untitled" />
+          <NoteTitleInput value={title} onChange={setTitle} />
 
           {/* Content editor (lazy loaded) */}
           <div className="flex-1">
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
-                <NoteEditor />
+                <NoteEditor documentId="note-create-modal" initialMarkdown="" />
               </Suspense>
             </ErrorBoundary>
           </div>

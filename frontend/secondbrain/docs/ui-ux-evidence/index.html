@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Second Brain 화면 검수 자료</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #10151f; color: #eef1f6; font-family: system-ui, sans-serif; line-height: 1.6; }
+      main { max-width: 1120px; margin: auto; padding: 32px 20px 80px; }
+      h1 { font-size: 26px; }
+      h2 { margin-top: 48px; font-size: 20px; }
+      p, figcaption { color: #b7c1d0; }
+      a { color: #c3b6fa; }
+      .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+      figure { margin: 0 0 20px; }
+      img { display: block; width: 100%; border: 1px solid #303a4e; border-radius: 10px; }
+      video { display: block; width: min(100%, 960px); margin: 16px auto; border-radius: 10px; }
+      .logo-video { max-width: 300px; }
+      figcaption { margin-top: 8px; font-size: 14px; }
+      @media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Second Brain 화면 검수 자료</h1>
+      <p>2026-09-26 로컬 QA 자료입니다. 이미지를 누르면 원본 크기로 볼 수 있습니다. 이전 검사 범위와 남은 확인은 <a href="../ui-ux-refresh.md">UI/UX 개선 기록</a>에 있습니다.</p>
+
+      <h2>원본 브랜드와 로그인 화면</h2>
+      <div class="pair">
+        <figure><a href="landing-before-simplification.png"><img src="landing-before-simplification.png" alt="변경 전 로그인 화면" /></a><figcaption>변경 전 · 제목과 설명, 기능 소개, 장식.</figcaption></figure>
+        <figure><a href="landing-after.png"><img src="landing-after.png" alt="원본 로고와 제품명 및 로그인 버튼을 보이는 변경 후 화면" /></a><figcaption>변경 후 · 원본 Logo.svg, Second Brain, Google로 로그인.</figcaption></figure>
+      </div>
+      <p>원본 자산은 <a href="/src/shared/components/icon/Logo.svg">앱의 Logo.svg</a>입니다. <a href="landing-390.png">390px 로그인 화면</a>도 확인할 수 있습니다.</p>
+
+      <h2>원본과 현재 입체 로딩</h2>
+      <figure><a href="loading-logo-comparison.png"><img src="loading-logo-comparison.png" alt="원본 로고와 현재 3D 형상의 0도, 60도, 120도, 180도 비교" /></a><figcaption>실제 브라우저 Canvas의 원본·0°·60°·120°·180° 비교. 뒷면과 깊이는 원본 한 장에서 추정했습니다.</figcaption></figure>
+      <figure><a href="loading-logo-47-360.png"><img src="loading-logo-47-360.png" alt="현재 3D 형상의 30도 간격 전체 회전 정지 자료" /></a><figcaption>30° 간격의 오프라인 정지 자료. 실제 움직임은 아래 영상으로 확인합니다.</figcaption></figure>
+      <video class="logo-video" controls playsinline preload="metadata" aria-label="실제 Canvas 로고 회전 기록"><source src="loading-logo.webm" type="video/webm" /></video>
+      <p>위 영상은 현재 47점 형상의 실제 Canvas 기록입니다. <a href="loading-live.html">실제 렌더러 비교 페이지</a>에서 240/96px와 연속 회전을 조작할 수 있습니다. 이 페이지는 앱 경로가 아닙니다. <a href="loading-logo-geometry.md">형상과 검증 경계</a>를 함께 확인하세요.</p>
+
+      <h2>타이포그래피 전후</h2>
+      <div class="pair">
+        <figure><a href="typography-before.png"><img src="typography-before.png" alt="변경 전 노트의 제목과 본문" /></a><figcaption>변경 전 · 같은 한글 문단·목록·숫자·영문 내용.</figcaption></figure>
+        <figure><a href="typography-after.png"><img src="typography-after.png" alt="변경 후 노트의 제목과 본문" /></a><figcaption>변경 후 · 제목 32px/600, 본문 17px/400.</figcaption></figure>
+      </div>
+
+      <h2>메인·빈 상태 전후</h2>
+      <div class="pair">
+        <figure><a href="before-main.png"><img src="before-main.png" alt="변경 전 메인 화면" /></a><figcaption>메인 변경 전.</figcaption></figure>
+        <figure><a href="after-main.png"><img src="after-main.png" alt="변경 후 메인 화면" /></a><figcaption>메인 변경 후 · QA 노트 수는 촬영 시점에 따라 다릅니다.</figcaption></figure>
+        <figure><a href="empty-before.png"><img src="empty-before.png" alt="큰 제목과 작성 버튼이 있는 변경 전 빈 화면" /></a><figcaption>빈 화면 변경 전.</figcaption></figure>
+        <figure><a href="empty-after.png"><img src="empty-after.png" alt="짧은 상태 문구를 보이는 변경 후 빈 화면" /></a><figcaption>빈 화면 변경 후 · 상단 새 노트 버튼 유지.</figcaption></figure>
+      </div>
+
+      <h2>대표 로딩 전환</h2>
+      <p>실제 QA GET에 검사용 API·편집기 모듈 지연을 넣었습니다. 로딩 시간의 일반적인 측정값이 아니며, 전체 화면 PendingApp/OAuth와 스크롤 뒤·좁은 목록, pending 버튼·저장 전환의 시각 검사는 남아 있습니다.</p>
+      <div class="pair">
+        <figure><a href="loading-main-before.png"><img src="loading-main-before.png" alt="변경 전 메인 로딩" /></a><figcaption>메인 변경 전.</figcaption></figure>
+        <figure><a href="loading-main-after.png"><img src="loading-main-after.png" alt="변경 후 메인 로딩" /></a><figcaption>메인 변경 후 · 헤더 아래 중앙.</figcaption></figure>
+        <figure><a href="loading-list-before.png"><img src="loading-list-before.png" alt="변경 전 목록 로딩" /></a><figcaption>목록 변경 전.</figcaption></figure>
+        <figure><a href="loading-list-after.png"><img src="loading-list-after.png" alt="변경 후 목록 로딩" /></a><figcaption>목록 변경 후 · 당시 일반 너비의 남은 영역 중앙.</figcaption></figure>
+        <figure><a href="loading-note-data-before.png"><img src="loading-note-data-before.png" alt="변경 전 노트 데이터 로딩" /></a><figcaption>노트 변경 전.</figcaption></figure>
+        <figure><a href="loading-note-data-after.png"><img src="loading-note-data-after.png" alt="변경 후 노트 데이터 로딩" /></a><figcaption>노트 변경 후 · 편집 도구 아래 중앙.</figcaption></figure>
+      </div>
+      <video controls playsinline preload="metadata" aria-label="메인, 목록, 노트의 로딩과 준비 전환"><source src="motion-flow.webm" type="video/webm" /></video>
+
+      <h2>그래프 카메라</h2>
+      <p>다음 화면은 합성 인증·저장 노드로 확인한 카메라 배치입니다. 실제 AI worker 결과는 아닙니다.</p>
+      <div class="pair">
+        <figure><a href="graph-camera-3-1280.png"><img src="graph-camera-3-1280.png" alt="1280px에서 합성 노드 세 개의 전체 보기" /></a><figcaption>1280px · 합성 3노드 초기 fit.</figcaption></figure>
+        <figure><a href="graph-camera-48-390.png"><img src="graph-camera-48-390.png" alt="390px에서 합성 노드 48개의 전체 보기" /></a><figcaption>390px · 합성 48노드. 개별 선택에는 확대·검색이 필요합니다.</figcaption></figure>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,24 +1,30 @@
+import { z } from 'zod';
 import { apiClient } from '@/api/client';
-import type { NoteRequest, NoteResponse, NoteUpdateRequest } from '@/shared/types/note.types';
+import { parseSuccessEnvelope } from '@/shared/api/responseSchemas';
+import { captureSessionEpoch } from '@/stores/authStore';
+import type { NoteRequest, NoteResponse } from '@/shared/types/note.types';
 
 const API_BASE_URL = '/api/notes';
 
-/**
- * API 응답 래퍼 타입
- * - 백엔드 BaseResponse와 일치
- */
-interface ApiResponse<Result> {
-  success: boolean;
-  code: number;
-  message: string;
-  data: Result;
+const NOTE_RESPONSE_SCHEMA = z.object({
+  noteId: z.number().int().positive(),
+  title: z.string(),
+  content: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  remindAt: z.string().nullable(),
+  remindCount: z.number().int().nonnegative(),
+});
+
+export interface NoteRequestOptions {
+  sessionEpoch?: number;
+  signal?: AbortSignal;
 }
 
-/**
- * TanStack Query용 QueryKey 팩토리
- * - 일관된 쿼리 키 관리
- * - 타입 안전성 보장
- */
+export function parseNoteResponse(input: unknown): NoteResponse {
+  return NOTE_RESPONSE_SCHEMA.parse(input);
+}
+
 export const noteQueries = {
   all: ['notes'] as const,
   lists: () => [...noteQueries.all, 'list'] as const,
@@ -27,64 +33,54 @@ export const noteQueries = {
   detail: (id: number) => [...noteQueries.details(), id] as const,
 };
 
-/**
- * 노트 생성 (POST /api/notes)
- *
- * 검증:
- * - title, content 필수 (빈 값 불가)
- *
- * @param data - 노트 생성 요청 데이터
- * @returns 생성된 노트 정보
- * @throws Error - 검증 실패 또는 생성 실패
- */
-export async function createNote(data: NoteRequest): Promise<NoteResponse> {
-  const response = await apiClient.post<ApiResponse<NoteResponse>>(API_BASE_URL, data);
-  return response.data.data;
-}
-
-/**
- * 노트 조회 (GET /api/notes/{id})
- *
- * @param id - 노트 ID
- * @returns 노트 정보
- * @throws Error - 노트 없음 (404) 또는 권한 없음 (403)
- */
-export async function getNote(id: number): Promise<NoteResponse> {
-  const response = await apiClient.get<ApiResponse<NoteResponse>>(`${API_BASE_URL}/${id}`);
-  return response.data.data;
-}
-
-/**
- * 노트 수정 (PUT /api/notes/{id})
- *
- * @param id - 노트 ID
- * @param data - 수정 데이터 (title, content 선택)
- * @returns 수정된 노트 정보
- * @throws Error - 노트 없음 (404) 또는 권한 없음 (403)
- */
-export async function updateNote(id: number, data: NoteUpdateRequest): Promise<NoteResponse> {
-  const response = await apiClient.put<ApiResponse<NoteResponse>>(`${API_BASE_URL}/${id}`, data);
-  return response.data.data;
-}
-
-/**
- * 노트 삭제 (DELETE /api/notes/{id})
- *
- * @param id - 노트 ID
- * @throws Error - 노트 없음 (404) 또는 권한 없음 (403)
- */
-export async function deleteNote(id: number): Promise<void> {
-  await apiClient.delete(`${API_BASE_URL}/${id}`);
-}
-
-/**
- * 노트 다중 삭제 (DELETE /api/notes)
- *
- * @param noteIds - 삭제할 노트 ID 배열
- * @throws Error - 노트 없음 (404) 또는 권한 없음 (403)
- */
-export async function deleteNotes(noteIds: number[]): Promise<void> {
-  await apiClient.delete(API_BASE_URL, {
-    data: { noteIds },
+export async function createNote(
+  data: NoteRequest,
+  options: NoteRequestOptions = {},
+): Promise<void> {
+  const sessionEpoch = options.sessionEpoch ?? captureSessionEpoch();
+  const response = await apiClient.post<unknown>(API_BASE_URL, data, {
+    sessionEpoch,
+    signal: options.signal,
   });
+  parseSuccessEnvelope(response.data, () => undefined);
+}
+
+export async function getNote(id: number, options: NoteRequestOptions = {}): Promise<NoteResponse> {
+  if (!Number.isSafeInteger(id) || id <= 0) throw new RangeError('Invalid note ID');
+  const sessionEpoch = options.sessionEpoch ?? captureSessionEpoch();
+  const response = await apiClient.get<unknown>(`${API_BASE_URL}/${id}`, {
+    sessionEpoch,
+    signal: options.signal,
+  });
+  return parseSuccessEnvelope(response.data, parseNoteResponse);
+}
+
+export async function updateNote(
+  id: number,
+  data: NoteRequest,
+  options: NoteRequestOptions = {},
+): Promise<NoteResponse> {
+  if (!Number.isSafeInteger(id) || id <= 0) throw new RangeError('Invalid note ID');
+  const sessionEpoch = options.sessionEpoch ?? captureSessionEpoch();
+  const response = await apiClient.put<unknown>(`${API_BASE_URL}/${id}`, data, {
+    sessionEpoch,
+    signal: options.signal,
+  });
+  return parseSuccessEnvelope(response.data, parseNoteResponse);
+}
+
+export async function deleteNotes(
+  noteIds: number[],
+  options: NoteRequestOptions = {},
+): Promise<void> {
+  if (noteIds.length === 0 || noteIds.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
+    throw new RangeError('Invalid note IDs');
+  }
+  const sessionEpoch = options.sessionEpoch ?? captureSessionEpoch();
+  const response = await apiClient.delete<unknown>(API_BASE_URL, {
+    data: { noteIds },
+    sessionEpoch,
+    signal: options.signal,
+  });
+  parseSuccessEnvelope(response.data, () => undefined);
 }

@@ -1,51 +1,53 @@
-import { useState, useEffect } from 'react';
-import SearchIcon from '@/shared/components/icon/Search.svg?react';
+import { useRef } from 'react';
+import { Search, X } from 'lucide-react';
 import { useSearchPanelStore } from '@/features/main/stores/searchPanelStore';
-import { useDebounce } from '@/features/main/hooks/useDebounce';
 
-/**
- * 검색바 컴포넌트
- * - 검색 아이콘 + 밑줄 스타일
- * - 디바운싱을 통한 검색 쿼리 최적화
- * - 검색 결과가 있을 때만 패널 표시
- */
 export function SearchBar() {
-  const startSearch = useSearchPanelStore((state) => state.startSearch);
-  const closePanel = useSearchPanelStore((state) => state.closePanel);
-
-  // 로컬 상태로 검색어 관리
-  const [searchInput, setSearchInput] = useState('');
-  // 150ms 디바운싱 적용 (더 빠른 응답성)
-  const debouncedSearchInput = useDebounce(searchInput, 150);
-
-  // 검색어 변경 기반 패널 표시 로직
-  useEffect(() => {
-    const trimmedInput = debouncedSearchInput.trim();
-
-    if (!trimmedInput) {
-      // store에서 직접 현재 mode 확인 (의존성 배열에서 제거하여 race condition 방지)
-      const currentMode = useSearchPanelStore.getState().mode;
-      if (currentMode === 'search') {
-        closePanel();
-      }
-      return;
-    }
-
-    // 검색어 변경 시에만 검색 패널 열기
-    startSearch(debouncedSearchInput);
-  }, [debouncedSearchInput, closePanel, startSearch]);
-
+  const query = useSearchPanelStore((state) => state.query);
+  const updateQuery = useSearchPanelStore((state) => state.updateQuery);
+  const openRecent = useSearchPanelStore((state) => state.openRecent);
+  const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex items-center gap-3">
-      <SearchIcon className="text-white/80" />
+    <div className="flex h-10 min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/4 px-3 transition-colors focus-within:border-primary/60 focus-within:bg-white/6">
+      <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <input
+        ref={inputRef}
         type="text"
-        placeholder="검색"
+        placeholder="노트 검색"
         aria-label="검색"
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-        className="w-75 border-b-2 border-white/60 bg-transparent pb-2 text-white outline-hidden transition-colors placeholder:text-white/50 focus:border-white"
+        aria-controls="search-panel"
+        value={query}
+        onChange={(event) => updateQuery(event.currentTarget.value)}
+        onFocus={() => {
+          if (!query.trim()) openRecent();
+        }}
+        onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing || event.defaultPrevented) return;
+          if (event.key === 'ArrowDown') {
+            const firstResult = document.querySelector<HTMLElement>(
+              '#search-panel:not([inert]) [data-note-link], #search-panel:not([inert]) input[type="checkbox"]',
+            );
+            if (firstResult) {
+              event.preventDefault();
+              firstResult.focus();
+            }
+          }
+        }}
+        className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
       />
+      {query && (
+        <button
+          type="button"
+          aria-label="검색어 지우기"
+          className="-mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-white/8 hover:text-foreground"
+          onClick={() => {
+            updateQuery('');
+            inputRef.current?.focus();
+          }}
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

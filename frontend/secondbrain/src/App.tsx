@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 
 import { queryClient } from '@/lib/queryClient';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 // routeTree.gen.ts는 @ts-nocheck로 생성되어 타입 추론 불가
 
 import { routeTree } from '@/routeTree.gen';
@@ -13,7 +14,15 @@ import { routeTree } from '@/routeTree.gen';
 
 const router = createRouter({
   routeTree,
+  defaultPendingComponent: PendingApp,
+  defaultPendingMs: 120,
+  defaultPendingMinMs: 0,
 });
+
+function PendingApp() {
+  // Router already applied its pending delay before mounting this component.
+  return <LoadingSpinner delayMs={0} />;
+}
 
 /**
  * TypeScript 타입 추론을 위한 Router 타입 선언

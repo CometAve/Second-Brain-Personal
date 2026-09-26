@@ -10,8 +10,8 @@ import { CallbackPage } from '@/features/auth/pages/CallbackPage';
  */
 
 const searchSchema = z.object({
-  code: z.string().optional(),
-  error: z.string().optional(),
+  code: z.string().optional().catch(undefined),
+  error: z.string().optional().catch(undefined),
 });
 
 export type CallbackSearch = z.infer<typeof searchSchema>;

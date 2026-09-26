@@ -5,7 +5,7 @@ export function RootLayout() {
   return (
     <>
       <Outlet />
-      <Toaster position="top-right" expand={false} richColors closeButton />
+      <Toaster theme="dark" position="bottom-right" expand={false} richColors closeButton />
     </>
   );
 }

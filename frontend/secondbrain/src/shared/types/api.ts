@@ -7,5 +7,5 @@ export interface BaseResponse<Data> {
   success: boolean;
   code: number;
   message: string;
-  data: Data | null;
+  data?: Data | null;
 }

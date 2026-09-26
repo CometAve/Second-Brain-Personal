@@ -1,17 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { noteAPI } from '@/features/note/services/noteService';
-import type { NoteData } from '@/features/note/types/note';
+import { getNote, noteQueries } from '@/api/client/noteApi';
+import { useAuthStore } from '@/stores/authStore';
 
-/**
- * 노트 데이터를 가져오는 React Query 훅
- */
+/** Loads one note through the validated, session-bound API adapter. */
 export function useNoteQuery(noteId: string) {
-  return useQuery<NoteData>({
-    queryKey: ['note', noteId],
-    queryFn: async () => {
-      const response = await noteAPI.getNote({ noteId: Number(noteId) });
-      return response.data;
-    },
-    enabled: !!noteId,
+  const sessionEpoch = useAuthStore((state) => state.sessionEpoch);
+  const id = Number(noteId);
+  return useQuery({
+    queryKey: [...noteQueries.detail(id), sessionEpoch],
+    queryFn: ({ signal }) => getNote(id, { sessionEpoch, signal }),
+    enabled: Number.isSafeInteger(id) && id > 0,
+    retry: false,
   });
 }

@@ -1,157 +1,192 @@
-import { type ReactNode, useState, useEffect, useRef } from 'react';
+import { type ReactNode, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
-interface SidePeekOverlayProps {
+type SidePeekOverlayProps = {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
   mode: 'full-screen' | 'side-peek';
   onToggleMode: () => void;
-}
+};
+const FOCUSABLE_SELECTOR =
+  'button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
 
-/**
- * Side Peek 공통 오버레이 컨테이너
- * - 배경 오버레이 (클릭 시 닫기)
- * - 슬라이드 애니메이션 (왼쪽→오른쪽)
- * - TailwindCSS transform 및 반응형 클래스 사용
- * - 크기 조절 가능 (왼쪽 border 드래그, side-peek 모드에서만)
- * - 전체화면/부분화면 모드 지원
- */
+/** The same modal surface survives loading, ready and failed states. */
 export function SidePeekOverlay({ isOpen, onClose, children, mode }: SidePeekOverlayProps) {
-  // 드래그로 설정한 커스텀 너비 (null이면 CSS 반응형 사용)
   const [customWidth, setCustomWidth] = useState<number | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const dragRef = useRef<AbortController | null>(null);
 
-  // AbortController ref (이벤트 리스너 정리용)
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // 컴포넌트 언마운트 시 이벤트 리스너 정리
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const previousInert = new Map<HTMLElement, boolean>();
+    for (const child of document.body.children) {
+      if (
+        child instanceof HTMLElement &&
+        child !== overlayRef.current &&
+        child.tagName !== 'SCRIPT'
+      ) {
+        previousInert.set(child, child.inert);
+        child.inert = true;
       }
-      document.body.style.userSelect = '';
+    }
+    document.body.style.overflow = 'hidden';
+    if (!panelRef.current?.contains(document.activeElement)) panelRef.current?.focus();
+    return () => {
+      for (const [element, inert] of previousInert) element.inert = inert;
+      document.body.style.overflow = previousOverflow;
+      // Routing can replace the invoker or re-enable it later in this commit.
+      queueMicrotask(() => {
+        if (document.activeElement !== document.body) return;
+        const destination = [
+          trigger,
+          document.getElementById('search-panel-close'),
+          document.getElementById('note-create-button'),
+        ].find(
+          (element) =>
+            element?.isConnected &&
+            element.matches(FOCUSABLE_SELECTOR) &&
+            !element.closest('[inert]') &&
+            element.getClientRects().length > 0,
+        );
+        destination?.focus();
+      });
     };
-  }, []);
+  }, [isOpen]);
 
-  return (
-    <>
-      {/* 배경 오버레이 */}
+  useEffect(
+    () => () => {
+      dragRef.current?.abort();
+    },
+    [],
+  );
+
+  return createPortal(
+    <div ref={overlayRef}>
       <div
-        className={`fixed inset-0 z-100 bg-transparent transition-opacity duration-300 ${
-          isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-        }`}
+        className={`fixed inset-0 z-100 bg-black/10 transition-opacity duration-150 motion-reduce:transition-none ${isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
         onClick={onClose}
         aria-hidden="true"
       />
-
-      {/* Side Peek 패널 */}
       <div
-        className={`fixed top-0 right-0 z-110 h-full border-l-2 border-white/30 backdrop-blur-xl transition-all duration-500 ease-out ${
-          isOpen
-            ? 'pointer-events-auto translate-x-0 animate-slide-in-right opacity-100'
-            : 'pointer-events-none translate-x-full opacity-0'
-        } ${mode === 'full-screen' ? 'w-full' : 'w-full md:w-3/4 lg:w-2/3 xl:w-1/2 2xl:w-2/5'}`}
-        style={mode === 'side-peek' && customWidth ? { width: `${customWidth}%` } : undefined}
+        ref={panelRef}
         role="dialog"
+        aria-label="노트 편집"
         aria-modal="true"
+        tabIndex={-1}
+        inert={!isOpen}
+        className={`fixed top-0 right-0 z-110 h-dvh border-l border-[#343d50] bg-[#11151e] outline-hidden transition-opacity duration-150 ease-out motion-reduce:transition-none ${isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'} ${mode === 'full-screen' ? 'w-full' : 'w-full md:w-3/4 lg:w-2/3 xl:w-1/2 2xl:w-2/5'}`}
+        style={
+          mode === 'side-peek' && customWidth !== null ? { width: `${customWidth}%` } : undefined
+        }
+        onKeyDown={(event) => {
+          if (event.defaultPrevented || event.nativeEvent.isComposing) return;
+          if (event.target instanceof Element && event.target.closest('[role="alertdialog"]'))
+            return;
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            onClose();
+            return;
+          }
+          if (event.key !== 'Tab') return;
+          const items = Array.from(
+            event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+          ).filter((element) => !element.closest('[inert]') && element.getClientRects().length > 0);
+          const first = items[0];
+          const last = items.at(-1);
+          if (!first || !last) {
+            event.preventDefault();
+            event.currentTarget.focus();
+            return;
+          }
+          if (
+            event.shiftKey &&
+            (document.activeElement === first || document.activeElement === event.currentTarget)
+          ) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }}
       >
-        {/* Resize Handle - side-peek 모드에서만 표시 */}
         {mode === 'side-peek' && (
           <div
-            className="absolute top-0 left-0 z-120 h-full w-2 cursor-ew-resize transition-colors hover:bg-white/40 active:bg-white/60"
-            onMouseDown={(e) => {
-              e.preventDefault();
-
-              // 이전 드래그 중단
-              if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-              }
-
-              // 새 AbortController 생성
+            className="absolute top-0 left-0 z-20 h-full w-2 cursor-ew-resize hover:bg-white/30 focus-visible:bg-white/30"
+            onPointerDown={(event) => {
+              const panel = panelRef.current;
+              if (!panel) return;
+              event.preventDefault();
+              dragRef.current?.abort();
               const controller = new AbortController();
-              abortControllerRef.current = controller;
-
-              // 드래그 상태 추적
-              const startX = e.clientX;
-              const panelElement = e.currentTarget.parentElement!;
-              const startWidthPx = panelElement.offsetWidth;
-              const windowWidth = window.innerWidth;
-
-              // 드래그 시작: transition 비활성화 (GPU 과부하 방지)
-              panelElement.style.transition = 'none';
-
-              // 드래그 중 크기 조절 (DOM 직접 조작으로 최고 성능)
-              const handleMove = (moveEvent: MouseEvent) => {
-                const deltaX = startX - moveEvent.clientX;
-                const newWidthPx = startWidthPx + deltaX;
-                const newWidthPercent = (newWidthPx / windowWidth) * 100;
-
-                // 최소 30%, 최대 95%
-                const clampedWidth = Math.min(Math.max(newWidthPercent, 30), 95);
-
-                // DOM 직접 조작 (React 리렌더링 우회)
-                panelElement.style.width = `${clampedWidth}%`;
-              };
-
-              // 드래그 종료 (최종 상태만 React에 반영)
-              const handleUp = () => {
-                // transition 복구
-                panelElement.style.transition = '';
-
-                // 최종 너비를 React 상태로 동기화
-                const finalWidth = parseFloat(panelElement.style.width);
-                if (!isNaN(finalWidth)) {
-                  setCustomWidth(finalWidth);
-                }
-
-                // AbortController로 자동 정리
-                controller.abort();
-                abortControllerRef.current = null;
-                document.body.style.userSelect = '';
-              };
-
-              // 이벤트 리스너 등록 (AbortController signal 사용)
+              dragRef.current = controller;
+              const startX = event.clientX;
+              const startWidth = panel.getBoundingClientRect().width;
+              const previousSelection = document.body.style.userSelect;
               document.body.style.userSelect = 'none';
-              document.addEventListener('mousemove', handleMove, { signal: controller.signal });
-              document.addEventListener('mouseup', handleUp, { signal: controller.signal });
+              const finish = () => {
+                document.body.style.userSelect = previousSelection;
+                const width = Number.parseFloat(panel.style.width);
+                if (Number.isFinite(width)) setCustomWidth(width);
+                controller.abort();
+                dragRef.current = null;
+              };
+              controller.signal.addEventListener(
+                'abort',
+                () => {
+                  document.body.style.userSelect = previousSelection;
+                },
+                { once: true },
+              );
+              document.addEventListener(
+                'pointermove',
+                (move) => {
+                  const width = ((startWidth + startX - move.clientX) / window.innerWidth) * 100;
+                  panel.style.width = `${Math.min(Math.max(width, Math.min(30, (360 / window.innerWidth) * 100)), 100)}%`;
+                },
+                { signal: controller.signal },
+              );
+              document.addEventListener('pointerup', finish, {
+                signal: controller.signal,
+                once: true,
+              });
+              document.addEventListener('pointercancel', finish, {
+                signal: controller.signal,
+                once: true,
+              });
             }}
-            onDoubleClick={() => {
-              // 더블클릭으로 커스텀 너비 리셋 (CSS 반응형으로 복귀)
-              setCustomWidth(null);
-            }}
-            onKeyDown={(e) => {
-              // 키보드 접근성: ArrowLeft/Right로 크기 조절
-              if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                setCustomWidth((prev) => {
-                  const current = prev ?? 50; // 기본값 50%
-                  return Math.max(current - 5, 30); // 최소 30%
-                });
-              } else if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                setCustomWidth((prev) => {
-                  const current = prev ?? 50; // 기본값 50%
-                  return Math.min(current + 5, 95); // 최대 95%
-                });
-              } else if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                // Enter/Space로 커스텀 너비 리셋
+            onDoubleClick={() => setCustomWidth(null)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                event.preventDefault();
+                const current =
+                  ((panelRef.current?.getBoundingClientRect().width ?? window.innerWidth / 2) /
+                    window.innerWidth) *
+                  100;
+                setCustomWidth(
+                  Math.min(Math.max(current + (event.key === 'ArrowLeft' ? 5 : -5), 30), 100),
+                );
+              } else if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
                 setCustomWidth(null);
               }
             }}
             role="separator"
-            aria-label="패널 크기 조절 (화살표 키로 조절, Enter/Space로 초기화)"
+            aria-label="패널 크기 조절"
             aria-orientation="vertical"
             aria-valuemin={30}
-            aria-valuemax={95}
-            aria-valuenow={customWidth ? Math.round(customWidth) : undefined}
+            aria-valuemax={100}
+            aria-valuenow={customWidth ?? 50}
             tabIndex={0}
           />
         )}
-
         {children}
       </div>
-    </>
+    </div>,
+    document.body,
   );
 }

@@ -1,13 +1,9 @@
 import { useNavigate } from '@tanstack/react-router';
-import { Check } from 'lucide-react';
+import { Check, FileText, ArrowUpRight } from 'lucide-react';
+import type { Note, RecentNote } from '@/features/main/types/search';
 
 interface NoteItemProps {
-  note: {
-    noteId?: number;
-    id?: number;
-    title: string;
-    content?: string;
-  };
+  note: Note | RecentNote;
   isSelected: boolean;
   onToggle: (id: number) => void;
   isDeleteMode: boolean;
@@ -15,67 +11,63 @@ interface NoteItemProps {
 
 export function NoteItem({ note, isSelected, onToggle, isDeleteMode }: NoteItemProps) {
   const navigate = useNavigate();
-  const id = note.noteId ?? note.id ?? 0;
+  const id = 'noteId' in note ? note.noteId : note.id;
+  const preview =
+    'content' in note
+      ? note.content
+          .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+          .replace(/[#*`>_~]/g, '')
+          .trim()
+      : null;
+  const rowClassName =
+    'group flex w-full items-start gap-3 rounded-xl px-3 py-3.5 text-left transition-colors hover:bg-white/5 focus-visible:bg-white/5';
+  const content = (
+    <span className="min-w-0 flex-1">
+      <span className="line-clamp-2 text-sm leading-6 font-medium wrap-break-word text-foreground">
+        {note.title}
+      </span>
+      {preview && (
+        <span className="mt-1 line-clamp-2 text-xs leading-5 wrap-break-word text-muted-foreground">
+          {preview}
+        </span>
+      )}
+    </span>
+  );
 
-  const handleItemClick = () => {
-    if (isDeleteMode) {
-      // 삭제 모드: 선택 토글
-      onToggle(id);
-    } else {
-      // 일반 모드: 노트 상세로 이동
-      void navigate({
-        to: '/notes/$noteId',
-        params: { noteId: id.toString() },
-      });
-    }
-  };
-
-  const handleCheckboxClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggle(id);
-  };
+  if (isDeleteMode) {
+    return (
+      <label className={`${rowClassName} cursor-pointer ${isSelected ? 'bg-primary/8' : ''}`}>
+        <input
+          type="checkbox"
+          className="peer sr-only"
+          checked={isSelected}
+          onChange={() => onToggle(id)}
+          aria-label={note.title}
+        />
+        <span
+          aria-hidden="true"
+          className={`mt-1 flex size-4.5 shrink-0 items-center justify-center rounded border peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-primary ${isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}
+        >
+          {isSelected && <Check className="size-3.5" />}
+        </span>
+        {content}
+      </label>
+    );
+  }
 
   return (
-    <div
-      onClick={handleItemClick}
-      className={`flex items-center px-3 py-5 transition-all duration-200 ${
-        isDeleteMode
-          ? 'cursor-pointer hover:rounded-lg hover:bg-white/5'
-          : 'cursor-pointer hover:rounded-lg hover:bg-white/10'
-      }`}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleItemClick();
-        }
-      }}
+    <button
+      type="button"
+      data-note-link
+      className={rowClassName}
+      onClick={() => void navigate({ to: '/notes/$noteId', params: { noteId: String(id) } })}
     >
-      {/* 체크박스: 삭제 모드일 때만 표시 */}
-      {isDeleteMode && (
-        <button
-          onClick={handleCheckboxClick}
-          className={`mr-3 flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all ${
-            isSelected
-              ? 'border-green-500 bg-white'
-              : 'border-white/80 bg-transparent hover:border-white'
-          }`}
-          aria-label="노트 선택"
-          aria-checked={isSelected}
-          role="checkbox"
-        >
-          {isSelected && <Check className="size-4 stroke-3 text-green-500" />}
-        </button>
-      )}
-
-      <h3
-        className={`flex-1 truncate text-base font-normal text-white/90 ${
-          isDeleteMode ? '' : 'hover:text-white'
-        }`}
-      >
-        {note.title}
-      </h3>
-    </div>
+      <FileText className="mt-1 size-4.5 shrink-0 text-primary/70" aria-hidden="true" />
+      {content}
+      <ArrowUpRight
+        className="mt-1 size-3.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+        aria-hidden="true"
+      />
+    </button>
   );
 }

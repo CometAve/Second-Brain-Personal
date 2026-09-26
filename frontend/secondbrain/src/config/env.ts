@@ -40,6 +40,25 @@ const getEnvVar = <Key extends keyof ImportMetaEnv>(key: Key): ImportMetaEnv[Key
   return value;
 };
 
+type HttpEnvKey = 'VITE_API_BASE_URL' | 'VITE_KG_API_BASE_URL' | 'VITE_OAUTH2_LOGIN_URL';
+
+function getHttpUrl(key: HttpEnvKey): string {
+  const raw = getEnvVar(key);
+  try {
+    const parsed = new URL(raw);
+    if (
+      (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') ||
+      parsed.username ||
+      parsed.password
+    ) {
+      throw new Error('Invalid URL');
+    }
+    return parsed.toString().replace(/\/$/, '');
+  } catch {
+    throw new Error(`Invalid HTTP URL for ${key}`);
+  }
+}
+
 /**
  * 타입 안전하고 검증된 환경 변수 객체
  * - vite-env.d.ts에서 타입 정의
@@ -55,11 +74,11 @@ const getEnvVar = <Key extends keyof ImportMetaEnv>(key: Key): ImportMetaEnv[Key
  */
 export const env = {
   /** API 서버 기본 URL */
-  apiBaseUrl: getEnvVar('VITE_API_BASE_URL'),
+  apiBaseUrl: getHttpUrl('VITE_API_BASE_URL'),
   /** Knowledge Graph API 서버 기본 URL */
-  kgApiBaseUrl: getEnvVar('VITE_KG_API_BASE_URL'),
+  kgApiBaseUrl: getHttpUrl('VITE_KG_API_BASE_URL'),
   /** OAuth2 Google 로그인 URL */
-  oauth2LoginUrl: getEnvVar('VITE_OAUTH2_LOGIN_URL'),
+  oauth2LoginUrl: getHttpUrl('VITE_OAUTH2_LOGIN_URL'),
 } as const;
 
 /**
