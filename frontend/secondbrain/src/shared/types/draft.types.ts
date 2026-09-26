@@ -33,7 +33,7 @@ export interface NoteDraftRequest {
   noteId?: string;
   title?: string;
   content?: string;
-  version?: number;
+  version: number;
 }
 
 /**

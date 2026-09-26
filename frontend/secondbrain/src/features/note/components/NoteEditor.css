@@ -1,173 +1,226 @@
-/**
- * Milkdown 에디터 커스텀 스타일
- * - Notion 스타일 Title/Content 구분
- * - Glass UI 효과 적용
- * - 스크린샷과 동일한 디자인
- */
-
-/* 에디터 컨테이너 - 투명 배경 (Glass 효과 제거) */
+/* Crepe mounts its floating menus beneath .milkdown, so one scoped palette
+   styles the document, slash commands, block handle, and selection toolbar. */
 .note-editor {
-  /* 완전 투명 배경 - 목표 스크린샷과 동일 */
+  min-height: 18rem;
   background: transparent;
-
-  /* 레이아웃 - 상단 padding 제거하여 Title과 간격 조정 */
-  padding: 0;
-  height: 100%;
-  overflow: visible;
 }
 
-/* 에디터 기본 스타일 */
 .note-editor .milkdown {
-  color: white;
-  height: 100%;
-  background: transparent !important;
+  --crepe-color-background: transparent;
+  --crepe-color-on-background: #eef1f6;
+  --crepe-color-surface: #171d29;
+  --crepe-color-surface-low: #202838;
+  --crepe-color-on-surface: #eef1f6;
+  --crepe-color-on-surface-variant: #b7c1d0;
+  --crepe-color-outline: #9da8bb;
+  --crepe-color-primary: #b4a4f6;
+  --crepe-color-secondary: #30304f;
+  --crepe-color-on-secondary: #f3eeff;
+  --crepe-color-inverse: #e7e4f3;
+  --crepe-color-on-inverse: #11151e;
+  --crepe-color-inline-code: #7bd5c4;
+  --crepe-color-error: #ffadad;
+  --crepe-color-hover: #293248;
+  --crepe-color-selected: #34365b;
+  --crepe-color-inline-area: #273248;
+  --crepe-base-font-size: 17px;
+  --crepe-font-title: inherit;
+  --crepe-font-default: inherit;
+  --crepe-shadow-1: 0 18px 48px rgb(0 0 0 / 0.38);
+  --crepe-shadow-2: 0 22px 56px rgb(0 0 0 / 0.48);
+  color: #eef1f6;
+  background: transparent;
 }
 
-/* Milkdown 내부 요소 배경 투명화 (Glass UI 강화) */
-.note-editor .milkdown .editor,
-.note-editor .milkdown > div {
-  background: transparent !important;
+.note-editor .milkdown .ProseMirror {
+  min-height: 18rem;
+  padding: 0 0 5rem;
+  overflow-wrap: anywhere;
+  font-size: 17px;
+  line-height: 1.8;
+  caret-color: #b4a4f6;
 }
 
-/* ProseMirror editor padding 제거 */
-.note-editor .ProseMirror.virtual-cursor-enabled.editor {
-  padding: 0;
+.note-editor .milkdown .ProseMirror > :first-child {
+  margin-top: 0;
 }
-
-/* Content 영역 - 일반 문단 */
-.note-editor .milkdown p {
-  font-size: 1rem; /* 16px - text-base */
-  line-height: 1.75rem; /* 28px - leading-7 */
-  margin-bottom: 1rem; /* 16px */
-  color: rgba(255, 255, 255, 0.85);
+.note-editor .milkdown .ProseMirror p {
+  margin: 0 0 1em;
+  color: #dce2eb;
+  line-height: 1.8;
 }
-
-/* Content 영역 - 모든 Heading 요소에 일관된 sans-serif 폰트 적용 */
-.note-editor .milkdown h1,
-.note-editor .milkdown h2,
-.note-editor .milkdown h3,
-.note-editor .milkdown h4,
-.note-editor .milkdown h5,
-.note-editor .milkdown h6 {
-  font-family: 'Noto Sans', Arial, Helvetica, sans-serif !important;
-}
-
-/* Content 영역 - Heading 1 */
-.note-editor .milkdown h1 {
-  font-size: 1.875rem; /* 30px - text-3xl */
-  font-weight: 700; /* bold */
-  line-height: 2.25rem; /* 36px */
-  margin-top: 2.5rem; /* 40px */
-  margin-bottom: 1.25rem; /* 20px */
-  color: #ffffff;
-}
-
-/* Content 영역 - Heading 2 (스크린샷: "Action items") */
-.note-editor .milkdown h2 {
-  font-size: 1.25rem; /* 20px - text-xl */
-  font-weight: 600; /* semibold */
-  line-height: 1.75rem; /* 28px */
-  margin-top: 2rem; /* 32px */
-  margin-bottom: 1rem; /* 16px */
-  color: #ffffff;
-}
-
-/* Content 영역 - Heading 3 */
-.note-editor .milkdown h3 {
-  font-size: 1.125rem; /* 18px */
+.note-editor .milkdown .ProseMirror h1,
+.note-editor .milkdown .ProseMirror h2,
+.note-editor .milkdown .ProseMirror h3,
+.note-editor .milkdown .ProseMirror h4,
+.note-editor .milkdown .ProseMirror h5,
+.note-editor .milkdown .ProseMirror h6 {
+  margin: 1.75em 0 0.6em;
+  color: #eef1f6;
+  font-family: inherit;
   font-weight: 600;
-  line-height: 1.75rem;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  color: #ffffff;
+  line-height: 1.35;
+  letter-spacing: normal;
 }
-
-/* Content 영역 - Heading 4 */
-.note-editor .milkdown h4 {
-  font-size: 1rem; /* 16px */
-  font-weight: 600;
-  line-height: 1.5rem;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #ffffff;
+.note-editor .milkdown .ProseMirror h1 {
+  font-size: 1.55em;
 }
-
-/* Content 영역 - Heading 5 */
-.note-editor .milkdown h5 {
-  font-size: 0.875rem; /* 14px */
-  font-weight: 600;
-  line-height: 1.25rem;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  color: #ffffff;
+.note-editor .milkdown .ProseMirror h2 {
+  font-size: 1.3em;
 }
-
-/* Content 영역 - Heading 6 */
-.note-editor .milkdown h6 {
-  font-size: 0.75rem; /* 12px */
-  font-weight: 600;
-  line-height: 1rem;
-  margin-top: 0.75rem;
-  margin-bottom: 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
+.note-editor .milkdown .ProseMirror h3 {
+  font-size: 1.15em;
 }
-
-/* 리스트 스타일 */
-.note-editor .milkdown ul,
-.note-editor .milkdown ol {
-  padding-left: 1.5rem; /* 24px */
-  margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.85);
+.note-editor .milkdown .ProseMirror h4 {
+  font-size: 1.08em;
 }
-
-.note-editor .milkdown li {
-  margin-bottom: 0.5rem; /* 8px */
-  line-height: 1.75rem; /* 28px */
+.note-editor .milkdown .ProseMirror h5,
+.note-editor .milkdown .ProseMirror h6 {
+  font-size: 1em;
 }
-
-/* 불릿 포인트 */
-.note-editor .milkdown ul li::marker {
-  color: rgba(255, 255, 255, 0.5);
+.note-editor .milkdown .ProseMirror ul,
+.note-editor .milkdown .ProseMirror ol {
+  margin: 0 0 1em;
+  padding-left: 1.5em;
+  color: #dce2eb;
 }
-
-/* 코드 블록 */
-.note-editor .milkdown pre {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
+.note-editor .milkdown .ProseMirror li {
+  margin: 0.25em 0;
+}
+.note-editor .milkdown .ProseMirror li p {
+  margin-bottom: 0.35em;
+}
+.note-editor .milkdown .ProseMirror li::marker {
+  color: #9c8bdc;
+}
+.note-editor .milkdown .ProseMirror li.milkdown-list-item-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  list-style: none;
+}
+.note-editor .milkdown .ProseMirror li.milkdown-list-item-block > .label-wrapper {
+  display: flex;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+}
+.note-editor .milkdown .ProseMirror li.milkdown-list-item-block .label {
+  color: #9da8bb;
+}
+.note-editor .milkdown .ProseMirror li.milkdown-list-item-block input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #b4a4f6;
+}
+.note-editor .milkdown .ProseMirror li.milkdown-list-item-block > .children {
+  flex: 1;
+  min-width: 0;
+}
+.note-editor .milkdown .ProseMirror blockquote {
+  margin: 1.5em 0;
+  padding: 0.2em 0 0.2em 1.1em;
+  border-left: 2px solid #b4a4f6;
+  color: #cbd4e2;
+}
+.note-editor .milkdown .ProseMirror blockquote p {
+  color: inherit;
+}
+.note-editor .milkdown .ProseMirror hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px solid #354056;
+}
+.note-editor .milkdown .ProseMirror a {
+  color: #9de4d9;
+  text-decoration-color: #6ab4aa;
+  text-underline-offset: 0.2em;
+}
+.note-editor .milkdown .ProseMirror code {
+  color: #a9e6db;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.87em;
+}
+.note-editor .milkdown .ProseMirror p code {
+  padding: 0.13em 0.35em;
+  border-radius: 0.3em;
+  background: #212d3b;
+}
+.note-editor .milkdown .ProseMirror pre {
+  margin: 1.2em 0;
+  padding: 1em 1.15em;
   overflow-x: auto;
+  border: 1px solid #303b4d;
+  border-radius: 0.65rem;
+  background: #171f2b;
 }
-
-.note-editor .milkdown code {
-  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-  font-size: 0.875rem;
-  color: #e2e8f0;
+.note-editor .milkdown .ProseMirror table {
+  margin: 1.5em 0;
 }
-
-/* 인라인 코드 */
-.note-editor .milkdown p code {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
+.note-editor .milkdown .ProseMirror th,
+.note-editor .milkdown .ProseMirror td {
+  border-color: #44516a;
 }
-
-/* 에디터 포커스 스타일 */
-.note-editor .milkdown:focus-within {
-  outline: none;
-}
-
-/* Placeholder 스타일 */
-.note-editor .milkdown .placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Crepe placeholder 스타일 - 모든 가능한 선택자 */
-.note-editor .crepe-placeholder,
-.note-editor [data-placeholder],
-.note-editor .ProseMirror .placeholder,
-.note-editor .ProseMirror p.is-empty::before,
+.note-editor .milkdown .ProseMirror .placeholder,
+.note-editor .milkdown .crepe-placeholder,
 .note-editor .milkdown [data-placeholder]::before {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: #8995a9;
+}
+
+.note-editor .milkdown .milkdown-slash-menu,
+.note-editor .milkdown .milkdown-toolbar,
+.note-editor .milkdown .milkdown-link-edit,
+.note-editor .milkdown .milkdown-link-preview {
+  border: 1px solid #394357;
+  color: #eef1f6;
+  background: #171d29;
+}
+.note-editor .milkdown .milkdown-slash-menu {
+  width: min(320px, calc(100vw - 2rem));
+}
+.note-editor .milkdown .milkdown-slash-menu .tab-group {
+  display: none;
+}
+.note-editor .milkdown .milkdown-slash-menu .menu-groups {
+  max-height: min(350px, 50vh);
+  padding: 0.35rem;
+}
+.note-editor .milkdown .milkdown-slash-menu .menu-groups .menu-group h6 {
+  padding: 0.6rem 0.7rem 0.3rem;
+  color: #9da8bb;
+  font-size: 0.72rem;
+  letter-spacing: normal;
+}
+.note-editor .milkdown .milkdown-slash-menu .menu-groups .menu-group li {
+  min-width: 0;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  color: #eef1f6;
+}
+.note-editor .milkdown .milkdown-slash-menu .menu-groups .menu-group li.hover,
+.note-editor .milkdown .milkdown-slash-menu .menu-groups .menu-group li.active {
+  color: #fff;
+  background: #34365b;
+}
+.note-editor .milkdown .milkdown-slash-menu .menu-groups .menu-group li svg {
+  width: 20px;
+  height: 20px;
+  color: #b4a4f6;
+  fill: currentColor;
+}
+.note-editor .milkdown .milkdown-toolbar .toolbar-item:focus-visible,
+.note-editor .milkdown .milkdown-link-edit button:focus-visible {
+  outline: 2px solid #b4a4f6;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .note-editor .milkdown .ProseMirror {
+    font-size: 16px;
+  }
+  .note-editor .milkdown .milkdown-block-handle {
+    display: none;
+  }
 }

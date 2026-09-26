@@ -1,4 +1,3 @@
-import { useRef, lazy, Suspense } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useCurrentUser } from '@/features/auth/hooks/useCurrentUser';
 import { Route } from '@/routes/main';
@@ -7,14 +6,8 @@ import { useSearchPanelStore } from '@/features/main/stores/searchPanelStore';
 import { SearchPanel } from '@/features/main/components/SearchPanel';
 import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary/ErrorBoundary';
-
-// 무거운 컴포넌트 lazy loading (three.js, Milkdown 번들 분리)
-const Graph = lazy(() =>
-  import('@/features/main/components/Graph').then((m) => ({ default: m.Graph })),
-);
-const DraftEditor = lazy(() =>
-  import('@/features/note/components/DraftEditor').then((m) => ({ default: m.DraftEditor })),
-);
+import { DraftEditor } from '@/features/note/components/DraftEditor';
+import { GraphPanel } from '@/features/main/components/GraphPanel';
 
 /**
  * 메인 페이지
@@ -23,41 +16,44 @@ const DraftEditor = lazy(() =>
  * - Search Params 기반 Side Peek (Draft/Note)
  */
 export function MainPage() {
-  const { data: user, isLoading, isError } = useCurrentUser();
+  const { data: user, isLoading, isError, refetch } = useCurrentUser();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
+  const activeDraftId = search.draft;
   const isOpen = useSearchPanelStore((state) => state.isOpen);
-
-  // 마지막 유효한 draftId 저장 (애니메이션을 위해 DOM 유지)
-  const lastDraftIdRef = useRef<string>('');
-  if (search.draft) {
-    lastDraftIdRef.current = search.draft;
-  }
 
   // PlusIcon 클릭: Draft 생성
   const handleCreateDraft = () => {
+    if (search.draft) return;
     const draftId = crypto.randomUUID();
     void navigate({ search: { draft: draftId } });
   };
 
-  // Side Peek 닫기
-  const handleCloseSidePeek = () => {
-    void navigate({ search: {} });
+  // The editor calls this only after its close/save policy has finished.
+  const handleCloseSidePeek = (draftId: string) => {
+    void navigate({
+      search: (previous) =>
+        previous.draft === draftId ? { ...previous, draft: undefined } : previous,
+      replace: true,
+    });
   };
 
   if (isLoading) {
     return (
-      <MainLayout onPlusClick={handleCreateDraft}>
-        <LoadingSpinner />
+      <MainLayout onPlusClick={handleCreateDraft} isCreateDisabled={!!search.draft}>
+        <LoadingSpinner fullScreen={false} className="h-full" />
       </MainLayout>
     );
   }
 
   if (isError || !user) {
     return (
-      <MainLayout onPlusClick={handleCreateDraft}>
-        <div className="flex min-h-dvh items-center justify-center">
+      <MainLayout onPlusClick={handleCreateDraft} isCreateDisabled={!!search.draft}>
+        <div className="flex h-full flex-col items-center justify-center gap-3">
           <p>사용자 정보를 불러올 수 없습니다.</p>
+          <button type="button" onClick={() => void refetch()} className="underline">
+            다시 시도
+          </button>
         </div>
       </MainLayout>
     );
@@ -65,27 +61,26 @@ export function MainPage() {
 
   return (
     <div>
-      <MainLayout onPlusClick={handleCreateDraft}>
+      <MainLayout onPlusClick={handleCreateDraft} isCreateDisabled={!!search.draft}>
         {/* 배경: Graph (lazy loaded - three.js 번들 분리) */}
         <ErrorBoundary>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Graph />
-          </Suspense>
+          <GraphPanel />
         </ErrorBoundary>
 
-        {/* Side Peek: Draft - 애니메이션을 위해 항상 렌더링 (lazy loaded - Milkdown 번들 분리) */}
-        <ErrorBoundary>
-          <Suspense fallback={null}>
+        {activeDraftId && (
+          <ErrorBoundary>
             <DraftEditor
-              draftId={lastDraftIdRef.current || 'temp'}
-              isOpen={!!search.draft}
-              onClose={handleCloseSidePeek}
+              draftId={activeDraftId}
+              isOpen
+              onClose={() => handleCloseSidePeek(activeDraftId)}
             />
-          </Suspense>
-        </ErrorBoundary>
+          </ErrorBoundary>
+        )}
       </MainLayout>
       <div
-        className={`absolute top-10 left-10 z-40 h-[calc(100%-5rem)] w-[27%] bg-transparent transition-[translate,opacity] duration-300 ease-out motion-reduce:transition-none ${
+        id="search-panel"
+        inert={!isOpen}
+        className={`absolute inset-x-3 top-21 bottom-3 z-40 transition-[translate,opacity] duration-200 ease-out motion-reduce:transition-none sm:top-23 sm:right-auto sm:bottom-5 sm:left-5 sm:w-88 ${
           isOpen
             ? 'pointer-events-auto translate-x-0 opacity-100'
             : 'pointer-events-none -translate-x-full opacity-0'

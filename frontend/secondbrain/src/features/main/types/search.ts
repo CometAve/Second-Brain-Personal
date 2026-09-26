@@ -14,13 +14,6 @@ export interface SimilarNoteRequest {
   limit: number;
 }
 
-export interface SimilarNoteResponse {
-  success: boolean;
-  code: number;
-  message: string;
-  data: Note[];
-}
-
 // 키워드 노트 검색
 export interface SearchNoteRequest {
   keyword: string;
@@ -36,22 +29,8 @@ export interface SearchNoteData {
   pageSize: number;
 }
 
-export interface SearchNoteResponse {
-  success: boolean;
-  code: number;
-  message: string;
-  data: SearchNoteData;
-}
-
 // 최근 작성 노트
 export interface RecentNote {
   noteId: number;
   title: string;
-}
-
-export interface RecentNoteResponse {
-  success: boolean;
-  code: number;
-  message: string;
-  data: RecentNote[];
 }

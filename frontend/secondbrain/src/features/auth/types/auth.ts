@@ -16,7 +16,7 @@ export interface UserInfo {
   id: number;
   email: string;
   name: string;
-  picture: string;
+  picture: string | null;
   setAlarm: boolean;
 }
 

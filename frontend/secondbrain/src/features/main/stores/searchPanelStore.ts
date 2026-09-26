@@ -29,6 +29,7 @@ interface SearchPanelState {
   selectAll: (ids: number[]) => void /** 전체 선택 */;
   deselectAll: () => void /** 전체 선택 해제 */;
   clearSelection: () => void /** 선택 상태 초기화 */;
+  retainVisibleSelection: (ids: number[]) => void /** 현재 표시된 노트 밖의 선택 제거 */;
 
   // ===== 삭제 모드 액션 =====
   toggleDeleteMode: () => void /** 삭제 모드 토글 */;
@@ -59,6 +60,10 @@ export const useSearchPanelStore = create<SearchPanelState>((set, get) => ({
       mode: 'recent',
       query: '',
       isOpen: true,
+      selectedIds: new Set<number>(),
+      isSelectAllMode: false,
+      isDeleteMode: false,
+      highlightedNodeIds: new Set<number>(),
     }),
 
   startSearch: (query: string) =>
@@ -66,6 +71,10 @@ export const useSearchPanelStore = create<SearchPanelState>((set, get) => ({
       mode: 'search',
       query,
       isOpen: true,
+      selectedIds: new Set<number>(),
+      isSelectAllMode: false,
+      isDeleteMode: false,
+      highlightedNodeIds: new Set<number>(),
     }),
 
   closePanel: () =>
@@ -81,10 +90,18 @@ export const useSearchPanelStore = create<SearchPanelState>((set, get) => ({
 
   updateQuery: (query: string) => {
     const trimmed = query.trim();
-    set({
-      query,
-      mode: trimmed ? 'search' : 'recent',
-      isOpen: true,
+    set((state) => {
+      if (state.query === query) return state;
+      const returnToRecent = !trimmed && state.mode === 'search';
+      return {
+        query,
+        mode: returnToRecent ? 'recent' : trimmed ? 'search' : state.mode,
+        isOpen: returnToRecent || trimmed ? true : state.isOpen,
+        selectedIds: new Set<number>(),
+        isSelectAllMode: false,
+        isDeleteMode: false,
+        highlightedNodeIds: new Set<number>(),
+      };
     });
   },
 
@@ -99,13 +116,13 @@ export const useSearchPanelStore = create<SearchPanelState>((set, get) => ({
       newSelectedIds.add(id);
     }
 
-    set({ selectedIds: newSelectedIds });
+    set({ selectedIds: newSelectedIds, isSelectAllMode: false });
   },
 
   selectAll: (ids: number[]) =>
     set({
       selectedIds: new Set(ids),
-      isSelectAllMode: true,
+      isSelectAllMode: ids.length > 0,
     }),
 
   deselectAll: () =>
@@ -119,6 +136,14 @@ export const useSearchPanelStore = create<SearchPanelState>((set, get) => ({
       selectedIds: new Set<number>(),
       isSelectAllMode: false,
     }),
+
+  retainVisibleSelection: (ids: number[]) => {
+    const visibleIds = new Set(ids);
+    const selectedIds = get().selectedIds;
+    const retained = new Set([...selectedIds].filter((id) => visibleIds.has(id)));
+    if (retained.size === selectedIds.size) return;
+    set({ selectedIds: retained, isSelectAllMode: false });
+  },
 
   // ===== 삭제 모드 액션 구현 =====
   toggleDeleteMode: () => {

@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
-import { GlassElement } from '@/shared/components/GlassElement/GlassElement';
 import { LogoutButton } from '@/features/auth/components/LogoutButton';
 import { ApiKeyMenuItem } from '@/features/auth/components/ApiKeyMenuItem';
 import { ApiKeyManagement } from '@/features/auth/components/ApiKeyManagement';
@@ -25,41 +24,54 @@ import type { UserProfileView } from '@/features/auth/types/apiKey';
 
 interface UserProfileMenuProps {
   isOpen: boolean;
+  view: UserProfileView;
+  onViewChange: (view: UserProfileView) => void;
   onClose: () => void;
 }
 
-export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
+export function UserProfileMenu({ isOpen, view, onViewChange, onClose }: UserProfileMenuProps) {
   const { user } = useAuthStore();
-  const [view, setView] = useState<UserProfileView>('menu');
+  const previousViewRef = useRef<UserProfileView>(view);
+  const apiKeyMenuRef = useRef<HTMLButtonElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || previousViewRef.current === view) return;
+    previousViewRef.current = view;
+    if (view === 'apikey-management') backButtonRef.current?.focus();
+    else apiKeyMenuRef.current?.focus();
+  }, [isOpen, view]);
 
   if (!user) return null;
 
   return (
     <Dropdown isOpen={isOpen} onClose={onClose} position="bottom-right">
-      <GlassElement
-        as="div"
-        className={`overflow-hidden transition-all duration-300 ease-in-out motion-reduce:transition-none ${
-          view === 'menu' ? 'w-80' : 'w-120'
+      <div
+        className={`max-h-[calc(100dvh-6rem)] max-w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl border border-white/10 bg-card shadow-[0_12px_48px_#0008] transition-[width] duration-150 motion-reduce:transition-none ${
+          view === 'menu' ? 'w-72' : 'w-108'
         }`}
       >
         {view === 'menu' ? (
           // 메뉴 상태
           <div role="menu" className="flex w-full flex-col gap-1 p-2">
             {/* 사용자 정보 */}
-            <div className="px-4 py-2">
-              <p className="text-sm font-medium text-white">{user.name}</p>
-              <p className="text-xs text-white/70">{user.email}</p>
+            <div className="p-3">
+              <p className="text-sm font-medium wrap-anywhere text-white">{user.name}</p>
+              <p className="mt-1 text-xs wrap-anywhere text-muted-foreground">{user.email}</p>
             </div>
 
             {/* 구분선 */}
-            <hr className="border-white/20" />
+            <hr className="my-1 border-white/8" />
 
             {/* API Key 메뉴 아이템 */}
-            <ApiKeyMenuItem onClick={() => setView('apikey-management')} />
+            <ApiKeyMenuItem
+              buttonRef={apiKeyMenuRef}
+              onClick={() => onViewChange('apikey-management')}
+            />
 
             {/* TODO: 향후 리마인더 기능 추가 예정 - ReminderToggleMenuItem, 리마인더 관리 메뉴 */}
 
-            <hr className="border-white/20" />
+            <hr className="my-1 border-white/8" />
 
             {/* 로그아웃 버튼 */}
             <LogoutButton
@@ -74,12 +86,13 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
           <div className="flex w-full flex-col gap-3 p-4">
             {/* 뒤로 가기 버튼 */}
             <button
+              ref={backButtonRef}
               onClick={(e) => {
                 // 이벤트 버블링 차단 - Dropdown의 외부 클릭 감지와 충돌 방지
                 e.stopPropagation();
-                setView('menu');
+                onViewChange('menu');
               }}
-              className="flex items-center gap-2 self-start rounded-sm px-2 py-1 text-sm text-white/80 transition-colors hover:text-white focus:ring-2 focus:ring-white/20 focus:outline-hidden"
+              className="flex items-center gap-2 self-start rounded-sm px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
               <span>뒤로</span>
@@ -89,7 +102,7 @@ export function UserProfileMenu({ isOpen, onClose }: UserProfileMenuProps) {
             <ApiKeyManagement />
           </div>
         )}
-      </GlassElement>
+      </div>
     </Dropdown>
   );
 }

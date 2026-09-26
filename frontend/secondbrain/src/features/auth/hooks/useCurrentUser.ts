@@ -1,22 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { useAuthStore } from '@/stores/authStore';
 import { getCurrentUser } from '@/features/auth/services/userService';
+import { useAuthStore } from '@/stores/authStore';
 
-/**
- * 현재 로그인된 사용자 정보를 조회하는 Query 훅
- * - Access Token이 있을 때만 실행
- * - 5분간 캐시 유지
- *
- * @returns useQuery result with user data, isLoading, isError
- */
 export function useCurrentUser() {
-  const { accessToken } = useAuthStore();
+  const sessionEpoch = useAuthStore((state) => state.sessionEpoch);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const restoredUser = useAuthStore((state) => state.user);
 
   return useQuery({
-    queryKey: ['user', 'me'],
-    queryFn: () => getCurrentUser(),
-    enabled: !!accessToken, // Access Token이 있을 때만 실행
-    staleTime: 5 * 60 * 1000, // 5분
+    queryKey: ['user', 'me', sessionEpoch],
+    queryFn: ({ signal }) => getCurrentUser(sessionEpoch, signal),
+    enabled: isAuthenticated,
+    // Session restoration already validated this user with the server. Seed
+    // the same-epoch query so entering main does not repeat that blocking load.
+    initialData: isAuthenticated ? (restoredUser ?? undefined) : undefined,
+    staleTime: 5 * 60 * 1000,
   });
 }

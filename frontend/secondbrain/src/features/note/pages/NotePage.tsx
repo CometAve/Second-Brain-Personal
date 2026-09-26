@@ -66,13 +66,13 @@ export function NotePage() {
         {/* 컨텐츠 영역 - Notion 스타일 최대 너비 제한 */}
         <div className="flex w-full max-w-225 flex-col">
           {/* 제목 입력 */}
-          <NoteTitleInput value={title} onChange={setTitle} placeholder="제목을 입력해주세요..." />
+          <NoteTitleInput value={title} onChange={setTitle} />
 
           {/* 마크다운 에디터 (lazy loaded) */}
           <div className="pb-20">
             <ErrorBoundary>
               <Suspense fallback={<LoadingSpinner />}>
-                <NoteEditor defaultValue="" />
+                <NoteEditor documentId="new-note-page" initialMarkdown="" />
               </Suspense>
             </ErrorBoundary>
           </div>

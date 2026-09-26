@@ -26,35 +26,24 @@ export interface Note {
  * Note 생성 요청 DTO
  * - POST /api/notes
  * - title, content: 필수 (빈 값 불가)
- * - images: 미래 확장용 (현재 미사용)
  */
 export interface NoteRequest {
   title: string;
   content: string;
-  images?: string[];
 }
 
 /**
  * Note 응답 DTO
  * - GET /api/notes/{id}
- * - POST /api/notes (생성 후 응답)
  * - PUT /api/notes/{id} (수정 후 응답)
  * - POST /api/notes/from-draft/{noteId} (Draft→Note 변환 후 응답)
  */
 export interface NoteResponse {
-  id: number;
+  noteId: number;
   title: string;
   content: string;
   createdAt: string;
   updatedAt: string;
-}
-
-/**
- * Note 수정 요청 DTO
- * - PUT /api/notes/{id}
- * - title, content: 선택 (하나만 수정 가능)
- */
-export interface NoteUpdateRequest {
-  title?: string;
-  content?: string;
+  remindAt: string | null;
+  remindCount: number;
 }

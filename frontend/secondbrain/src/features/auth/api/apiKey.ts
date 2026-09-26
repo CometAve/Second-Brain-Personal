@@ -1,31 +1,22 @@
+import { z } from 'zod';
+
 import { apiClient } from '@/api/client';
-import type { BaseResponse } from '@/shared/types/api';
-import type { ApiKeyResponse } from '@/features/auth/types/apiKey';
+import { InvalidApiResponseError, parseSuccessEnvelope } from '@/shared/api/responseSchemas';
 
-/**
- * API Key 발급 (또는 재발급)
- * POST /api/apikey
- *
- * @returns {Promise<string>} 발급된 API Key (UUID 형식)
- * @throws {Error} API Key 발급 실패 시
- */
-export async function generateApiKey(): Promise<string> {
-  const response = await apiClient.post<BaseResponse<ApiKeyResponse>>('/api/apikey');
+const API_KEY_SCHEMA = z.object({ apiKey: z.uuid() });
 
-  if (!response.data.success || !response.data.data) {
-    throw new Error('API Key 발급에 실패했습니다.');
-  }
-
-  return response.data.data.apiKey;
+export async function generateApiKey(sessionEpoch: number): Promise<string> {
+  const response = await apiClient.post<unknown>('/api/apikey', null, { sessionEpoch });
+  return parseSuccessEnvelope(response.data, (data) => {
+    const result = API_KEY_SCHEMA.safeParse(data);
+    if (!result.success) throw new InvalidApiResponseError();
+    return result.data.apiKey;
+  });
 }
 
-/**
- * API Key 삭제
- * DELETE /api/apikey
- *
- * @returns {Promise<void>}
- * @throws {Error} API Key 삭제 실패 시
- */
-export async function deleteApiKey(): Promise<void> {
-  await apiClient.delete('/api/apikey');
+export async function deleteApiKey(sessionEpoch: number): Promise<void> {
+  const response = await apiClient.delete<unknown>('/api/apikey', { sessionEpoch });
+  parseSuccessEnvelope(response.data, (data) => {
+    if (data !== undefined && data !== null) throw new InvalidApiResponseError();
+  });
 }

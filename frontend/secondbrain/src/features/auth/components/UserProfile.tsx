@@ -14,11 +14,10 @@ export function UserProfile({ user }: UserProfileProps) {
   return (
     <div className="flex flex-col items-center gap-4">
       <img
-        src={user.picture}
+        src={user.picture ?? undefined}
         alt={user.name}
         className="size-24 rounded-full"
         onError={(e) => {
-          console.error('Failed to load profile image:', user.picture);
           e.currentTarget.src = 'https://via.placeholder.com/96?text=User';
         }}
       />

@@ -1,109 +1,31 @@
-import { useState } from 'react';
 import { env } from '@/config/env';
 
 type GoogleLoginButtonText = 'signin' | 'signup' | 'continue';
-
 interface GoogleLoginButtonProps {
   text?: GoogleLoginButtonText;
 }
-
 const GOOGLE_LOGIN_BUTTON_LABELS = {
-  signin: 'Sign in with Google',
-  signup: 'Sign up with Google',
-  continue: 'Continue with Google',
-} as const satisfies Record<GoogleLoginButtonText, string>;
+  signin: 'Google로 로그인',
+  signup: 'Google로 가입',
+  continue: 'Google로 계속하기',
+};
 
-/**
- * Google Login Button Component
- * Follows official Google Sign-In Branding Guidelines
- * https://developers.google.com/identity/branding-guidelines
- *
- * Glassmorphism Design (2024-2025 Trend):
- * - Frosted glass effect with backdrop blur
- * - Semi-transparent background
- * - Subtle border for depth
- * - Smooth hover/press interactions
- *
- * Redirects user to backend OAuth2 endpoint for Google login
- */
+/** Server OAuth redirect, retaining Google's unmodified G mark. */
 export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  function handleLogin() {
-    window.location.href = env.oauth2LoginUrl;
-  }
-
-  // Glassmorphism styles
-  const buttonStyle: React.CSSProperties = {
-    display: 'flex',
-    minWidth: '200px',
-    cursor: 'pointer',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '12px',
-    // Glassmorphism: semi-transparent background
-    background: isPressed
-      ? 'rgba(255, 255, 255, 0.08)'
-      : isHovered
-        ? 'rgba(255, 255, 255, 0.15)'
-        : 'rgba(255, 255, 255, 0.1)',
-    // Frosted glass effect
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    // Subtle border for depth
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    padding: '12px 16px',
-    fontSize: '14px',
-    fontWeight: '500',
-    lineHeight: '20px',
-    color: '#FFFFFF',
-    // Smooth transitions
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    fontFamily: 'Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    // Transform for press feedback
-    transform: isPressed ? 'scale(0.98)' : 'scale(1)',
-    // Subtle shadow for depth
-    boxShadow: isPressed
-      ? 'none'
-      : isHovered
-        ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-        : '0 4px 16px rgba(0, 0, 0, 0.2)',
-    // Remove focus outline (accessibility maintained via other means)
-    outline: 'none',
-  };
-
-  const svgStyle: React.CSSProperties = {
-    marginRight: '10px',
-    display: 'block',
-    flexShrink: 0,
-    width: '18px',
-    height: '18px',
-    minWidth: '18px',
-    minHeight: '18px',
-  };
-
   return (
     <button
-      onClick={handleLogin}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsPressed(false);
-      }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
       type="button"
-      aria-label={GOOGLE_LOGIN_BUTTON_LABELS[text]}
-      style={buttonStyle}
+      onClick={() => {
+        window.location.href = env.oauth2LoginUrl;
+      }}
+      className="inline-flex min-h-11 items-center justify-center gap-3 rounded-full border border-[#8e918f] bg-[#131314] px-6 py-2.5 text-sm font-medium text-[#e3e3e3] transition-colors hover:bg-[#242526] active:bg-[#303134] motion-reduce:transition-none"
     >
-      {/* Google "G" Logo - Official SVG with standard colors */}
       <svg
         width="18"
         height="18"
         viewBox="0 0 18 18"
         xmlns="http://www.w3.org/2000/svg"
-        style={svgStyle}
+        className="size-[18px] shrink-0"
         aria-hidden="true"
       >
         <path
@@ -124,8 +46,7 @@ export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
         />
       </svg>
 
-      {/* Button Text */}
-      <span style={{ fontWeight: 500 }}>{GOOGLE_LOGIN_BUTTON_LABELS[text]}</span>
+      <span>{GOOGLE_LOGIN_BUTTON_LABELS[text]}</span>
     </button>
   );
 }

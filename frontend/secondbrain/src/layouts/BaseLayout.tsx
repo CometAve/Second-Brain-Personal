@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
-
 interface BaseLayoutProps {
   children: ReactNode;
 }
-
-const BaseLayout = ({ children }: BaseLayoutProps) => {
+export function BaseLayout({ children }: BaseLayoutProps) {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#10131A] text-white">{children}</div>
+    <div className="relative h-dvh w-full overflow-hidden bg-background text-foreground">
+      {children}
+    </div>
   );
-};
-
-export { BaseLayout };
+}

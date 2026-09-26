@@ -1,14 +1,6 @@
 import { useState } from 'react';
 import { useSearchPanelStore } from '@/features/main/stores/searchPanelStore';
-import DoubleArrow from '@/shared/components/icon/DoubleArrow.svg?react';
-import DeleteIcon from '@/shared/components/icon/Delete.svg?react';
-import { Check } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/shared/components/ui/tooltip';
+import { Check, ListChecks, Trash2, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +11,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/shared/components/ui/alert-dialog';
-import { useNoteDelete } from '@/features/note/hooks/useNoteDelete';
+import { noteDeleteRequest, useNoteDelete } from '@/features/note/hooks/useNoteDelete';
+import { isCurrentSession, useAuthStore } from '@/stores/authStore';
 import { toast } from 'sonner';
 
 interface PanelHeaderProps {
   allNoteIds: number[];
+  hasResults: boolean;
 }
 
-export function PanelHeader({ allNoteIds }: PanelHeaderProps) {
+export function PanelHeader({ allNoteIds, hasResults }: PanelHeaderProps) {
+  const mode = useSearchPanelStore((state) => state.mode);
+  const query = useSearchPanelStore((state) => state.query);
   const closePanel = useSearchPanelStore((state) => state.closePanel);
   const isDeleteMode = useSearchPanelStore((state) => state.isDeleteMode);
   const toggleDeleteMode = useSearchPanelStore((state) => state.toggleDeleteMode);
@@ -34,23 +30,27 @@ export function PanelHeader({ allNoteIds }: PanelHeaderProps) {
   const selectedIds = useSearchPanelStore((state) => state.selectedIds);
   const selectAll = useSearchPanelStore((state) => state.selectAll);
   const deselectAll = useSearchPanelStore((state) => state.deselectAll);
-  const isSelectAllMode = useSearchPanelStore((state) => state.isSelectAllMode);
+  const sessionEpoch = useAuthStore((state) => state.sessionEpoch);
 
   const { mutate: deleteNotes, isPending: isDeleting } = useNoteDelete();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [frozenDelete, setFrozenDelete] = useState<{ ids: number[]; epoch: number } | null>(null);
+  const currentFrozenDelete = frozenDelete?.epoch === sessionEpoch ? frozenDelete : null;
 
-  const hasSelection = selectedIds.size > 0;
-  const isPartialSelection = hasSelection && !isSelectAllMode;
+  const visibleIds = [...new Set(allNoteIds)];
+  const selectedVisibleIds = visibleIds.filter((id) => selectedIds.has(id));
+  const hasSelection = selectedVisibleIds.length > 0;
+  const isAllSelected = visibleIds.length > 0 && selectedVisibleIds.length === visibleIds.length;
+  const isPartialSelection = hasSelection && !isAllSelected;
 
   // 선택 상태에 따른 텍스트
   const getSelectButtonText = () => {
-    if (isSelectAllMode) {
-      return '전체해제';
+    if (isAllSelected) {
+      return '전체 해제';
     }
     if (isPartialSelection) {
-      return '선택해제';
+      return '선택 해제';
     }
-    return '전체선택';
+    return '전체 선택';
   };
 
   const handleDeleteModeToggle = () => {
@@ -62,138 +62,152 @@ export function PanelHeader({ allNoteIds }: PanelHeaderProps) {
       toggleDeleteMode();
     } else if (hasSelection) {
       // 삭제 모드 + 선택 있음 → 삭제 확인 모달
-      setShowDeleteConfirm(true);
+      setFrozenDelete({ ids: selectedVisibleIds, epoch: sessionEpoch });
     }
   };
 
   const handleDeleteConfirm = () => {
-    if (!hasSelection || isDeleting) return;
+    if (!currentFrozenDelete?.ids.length || isDeleting) return;
+    const request = noteDeleteRequest(currentFrozenDelete.ids);
+    if (request.sessionEpoch !== currentFrozenDelete.epoch) return;
 
-    deleteNotes(
-      { noteIds: Array.from(selectedIds) },
-      {
-        onSuccess: () => {
-          toast.success(`${selectedIds.size}개의 노트가 삭제되었습니다`);
-          exitDeleteMode();
-          setShowDeleteConfirm(false);
-        },
-        onError: (error) => {
-          console.error('노트 삭제 실패:', error);
-          toast.error('노트 삭제에 실패했습니다');
-          setShowDeleteConfirm(false);
-        },
+    deleteNotes(request, {
+      onSuccess: () => {
+        if (!isCurrentSession(request.sessionEpoch)) return;
+        toast.success(`${currentFrozenDelete.ids.length}개의 노트가 삭제되었습니다`);
+        exitDeleteMode();
+        setFrozenDelete(null);
       },
-    );
+      onError: () => {
+        if (!isCurrentSession(request.sessionEpoch)) return;
+        toast.error('노트 삭제에 실패했습니다');
+      },
+    });
   };
 
   const handleSelectAll = () => {
-    if (isSelectAllMode || isPartialSelection) {
+    if (hasSelection) {
       // 전체 선택 또는 부분 선택 → 전체 해제
       deselectAll();
     } else {
       // 선택 없음 → 전체 선택
-      selectAll(allNoteIds);
+      selectAll(visibleIds);
     }
+  };
+
+  const handleClosePanel = () => {
+    closePanel();
+    requestAnimationFrame(() => document.getElementById('search-panel-toggle')?.focus());
   };
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <TooltipProvider delayDuration={300}>
-            {/* 전체 선택 버튼 - 삭제 모드일 때만 표시 */}
-            {isDeleteMode && (
-              <button
-                onClick={handleSelectAll}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/80 transition-all duration-200 hover:bg-white/10 hover:text-white"
-                aria-label={getSelectButtonText()}
-              >
-                <div
-                  className={`flex size-6 items-center justify-center rounded-md border-2 transition-all ${
-                    isSelectAllMode || isPartialSelection
-                      ? 'border-green-500 bg-white text-green-500'
-                      : 'border-white/80 bg-transparent'
-                  }`}
-                >
-                  {(isSelectAllMode || isPartialSelection) && (
-                    <Check className="size-4 stroke-3 text-green-500" />
-                  )}
-                </div>
-                <span className="font-medium">{getSelectButtonText()}</span>
-              </button>
-            )}
-
-            {/* 삭제 버튼 */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleDeleteModeToggle}
-                  className={`rounded-lg p-2 transition-all duration-200 ${
-                    isDeleteMode
-                      ? 'border-2 border-red-500 bg-red-500/20 text-red-400 hover:scale-110 hover:bg-red-500/30'
-                      : 'text-white/80 hover:scale-110 hover:bg-white/10 hover:text-white'
-                  }`}
-                  aria-label={
-                    isDeleteMode
-                      ? hasSelection
-                        ? '선택 항목 삭제'
-                        : '삭제 모드 종료'
-                      : '삭제 모드 활성화'
-                  }
-                  aria-pressed={isDeleteMode}
-                  disabled={isDeleting}
-                >
-                  <DeleteIcon className="size-6" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={5}>
-                <p>
-                  {isDeleteMode
-                    ? hasSelection
-                      ? '선택 항목 삭제'
-                      : '삭제 모드 종료'
-                    : '삭제 모드'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+      <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-medium">{mode === 'search' ? '검색 결과' : '최근 노트'}</h2>
+          {mode === 'search' && (
+            <p className="mt-1 truncate text-xs text-muted-foreground">“{query}” 검색</p>
+          )}
         </div>
-
-        <TooltipProvider delayDuration={300}>
-          {/* 닫기 버튼 */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={closePanel}
-                className="rounded-lg p-2 text-white/80 transition-all duration-200 hover:scale-110 hover:bg-white/10 hover:text-white"
-                aria-label="패널 닫기"
-              >
-                <DoubleArrow className="size-5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={5}>
-              <p>패널 닫기</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <button
+          id="search-panel-close"
+          onClick={handleClosePanel}
+          type="button"
+          className="-mr-2 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-white/6 hover:text-foreground"
+          aria-label="패널 닫기"
+          title="패널 닫기"
+        >
+          <X className="size-4" aria-hidden="true" />
+        </button>
+      </div>
+      <div className="mx-4 mb-2 flex min-h-11 items-center justify-between gap-2 border-b border-white/8 pb-2 text-xs">
+        {isDeleteMode ? (
+          <button
+            onClick={handleSelectAll}
+            type="button"
+            aria-pressed={isAllSelected}
+            className="flex min-h-8 items-center gap-2 rounded-lg px-2 text-muted-foreground hover:bg-white/6 hover:text-foreground"
+            aria-label={getSelectButtonText()}
+          >
+            <span
+              aria-hidden="true"
+              className={`flex size-4 items-center justify-center rounded border ${hasSelection ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}
+            >
+              {hasSelection && <Check className="size-3" />}
+            </span>
+            {getSelectButtonText()}
+          </button>
+        ) : (
+          <span className="px-1 text-muted-foreground">
+            {hasResults ? `${visibleIds.length}개의 노트` : ''}
+          </span>
+        )}
+        <div className="flex items-center gap-1">
+          {isDeleteMode && (
+            <button
+              type="button"
+              onClick={exitDeleteMode}
+              className="min-h-8 rounded-lg px-2 text-muted-foreground hover:bg-white/6"
+              disabled={isDeleting}
+            >
+              취소
+            </button>
+          )}
+          <button
+            onClick={handleDeleteModeToggle}
+            type="button"
+            className={`flex min-h-8 items-center gap-1.5 rounded-lg px-2.5 transition-colors ${isDeleteMode && hasSelection ? 'bg-destructive/10 text-destructive hover:bg-destructive/20' : 'text-muted-foreground hover:bg-white/6 hover:text-foreground'}`}
+            aria-label={
+              isDeleteMode
+                ? hasSelection
+                  ? '선택 항목 삭제'
+                  : '삭제 모드 종료'
+                : '삭제 모드 활성화'
+            }
+            aria-pressed={isDeleteMode}
+            disabled={isDeleting || (!isDeleteMode && visibleIds.length === 0)}
+          >
+            {isDeleteMode && hasSelection ? (
+              <Trash2 className="size-3.5" aria-hidden="true" />
+            ) : (
+              <ListChecks className="size-3.5" aria-hidden="true" />
+            )}
+            {isDeleteMode && hasSelection
+              ? `${selectedVisibleIds.length}개 삭제`
+              : isDeleteMode
+                ? '선택 종료'
+                : '선택'}
+          </button>
+        </div>
       </div>
 
       {/* 삭제 확인 모달 */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialog
+        open={currentFrozenDelete !== null}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setFrozenDelete(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>노트 삭제 확인</AlertDialogTitle>
             <AlertDialogDescription>
-              선택한 {selectedIds.size}개의 노트를 삭제하시겠습니까?
+              선택한 {currentFrozenDelete?.ids.length ?? 0}개의 노트를 삭제하시겠습니까?
               <br />이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-white/10 text-white hover:bg-white/20">
+            <AlertDialogCancel
+              className="bg-white/10 text-white hover:bg-white/20"
+              disabled={isDeleting}
+            >
               취소
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteConfirm}
+              onClick={(event) => {
+                event.preventDefault();
+                handleDeleteConfirm();
+              }}
               className="bg-red-500 text-white hover:bg-red-600"
               disabled={isDeleting}
             >

@@ -1,10 +1,4 @@
-import { ChevronsRight, PanelRightClose, Trash2, Expand } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/shared/components/ui/tooltip';
+import { Check, PanelRightClose, Trash2, Expand, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,123 +11,120 @@ import {
   AlertDialogTrigger,
 } from '@/shared/components/ui/alert-dialog';
 
-interface DraftToolbarProps {
+type DraftToolbarProps = {
   onBack: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   mode: 'full-screen' | 'side-peek';
   onToggleMode: () => void;
   hideSidePeekButton?: boolean;
-}
+  disabled?: boolean;
+  status?: string;
+  error?: string | null;
+  onSave?: () => void;
+  saveDisabled?: boolean;
+  closeLabel?: string;
+  deleteLabel?: string;
+};
 
-/**
- * Draft 툴바
- * - 전체화면 모드: ChevronsRight (닫기), PanelRightClose (사이드 보기), Trash2 (삭제)
- * - 부분화면 모드: Expand (전체화면), Trash2 (삭제)
- * - Tooltip이 모든 버튼에 적용됨
- * - 삭제 버튼은 AlertDialog로 확인 후 실행
- */
+const BUTTON_CLASS =
+  'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[#3b465c] bg-[#202838] px-3 text-sm font-medium text-[#dce4ef] transition-colors hover:border-[#6c6d9d] hover:bg-[#293248] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b4a4f6] disabled:cursor-not-allowed disabled:opacity-40';
+
+/** A fixed header reserves space for both progress and errors, independently of the document. */
 export function DraftToolbar({
   onBack,
   onDelete,
   mode,
   onToggleMode,
   hideSidePeekButton = false,
+  disabled = false,
+  status = '',
+  error,
+  onSave,
+  saveDisabled = false,
+  closeLabel = '닫기',
+  deleteLabel = '노트 삭제',
 }: DraftToolbarProps) {
-  // 공통 버튼 스타일
-  const buttonClass = `
-    rounded-lg border border-white/30 bg-white/10 p-3
-    backdrop-blur-lg transition-colors
-    hover:bg-white/20 active:bg-white/30
-  `;
-
   return (
-    <TooltipProvider>
-      {mode === 'full-screen' ? (
-        // 전체화면 모드: 우측 상단에 3개 버튼
-        <div className="fixed top-10 right-10 z-10 flex gap-3">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button onClick={onBack} className={buttonClass} aria-label="닫기">
-                <ChevronsRight className="size-6 text-white" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>닫기</TooltipContent>
-          </Tooltip>
-
-          {!hideSidePeekButton && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={onToggleMode} className={buttonClass} aria-label="사이드 보기">
-                  <PanelRightClose className="size-6 text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>사이드 보기</TooltipContent>
-            </Tooltip>
+    <header className="absolute inset-x-0 top-0 z-10 flex h-24 flex-col border-b border-[#303a4e] bg-[#171d29] px-4 py-2.5 sm:px-8">
+      <div className="flex min-h-10 items-center justify-between gap-3">
+        <p
+          role="status"
+          aria-live="polite"
+          className="min-w-0 flex-1 truncate text-xs text-[#aeb9c9] sm:text-sm"
+        >
+          {status}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          {onSave && (
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saveDisabled || disabled}
+              className={`${BUTTON_CLASS} border-[#8275c1] bg-[#34365b] text-[#eee9ff] hover:bg-[#414576]`}
+            >
+              저장
+            </button>
           )}
-
-          <AlertDialog>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertDialogTrigger asChild>
-                  <button className={buttonClass} aria-label="노트 삭제">
-                    <Trash2 className="size-6 text-red-500" />
-                  </button>
-                </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent>노트 삭제</TooltipContent>
-            </Tooltip>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>노트 삭제</AlertDialogTitle>
-                <AlertDialogDescription>이 노트를 삭제하시겠습니까?</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction onClick={onDelete}>삭제</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      ) : (
-        // 부분화면 모드: 좌측 Expand (전체화면), 우측 Trash2 (삭제)
-        <>
-          <div className="fixed top-10 left-10 z-10">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={onToggleMode} className={buttonClass} aria-label="전체화면">
-                  <Expand className="size-6 text-white" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>전체화면</TooltipContent>
-            </Tooltip>
-          </div>
-
-          <div className="fixed top-10 right-10 z-10">
+          {!hideSidePeekButton && (
+            <button
+              type="button"
+              onClick={onToggleMode}
+              className={BUTTON_CLASS}
+              aria-label={mode === 'full-screen' ? '사이드 보기' : '전체화면'}
+              title={mode === 'full-screen' ? '사이드 보기' : '전체화면'}
+            >
+              {mode === 'full-screen' ? (
+                <PanelRightClose className="size-5" />
+              ) : (
+                <Expand className="size-5" />
+              )}
+            </button>
+          )}
+          {onDelete && (
             <AlertDialog>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertDialogTrigger asChild>
-                    <button className={buttonClass} aria-label="노트 삭제">
-                      <Trash2 className="size-6 text-red-500" />
-                    </button>
-                  </AlertDialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>노트 삭제</TooltipContent>
-              </Tooltip>
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className={BUTTON_CLASS}
+                  aria-label={deleteLabel}
+                  title={deleteLabel}
+                  disabled={disabled}
+                >
+                  <Trash2 className="size-4.5 text-[#f3a7aa]" />
+                </button>
+              </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>노트 삭제</AlertDialogTitle>
-                  <AlertDialogDescription>이 노트를 삭제하시겠습니까?</AlertDialogDescription>
+                  <AlertDialogTitle>{deleteLabel}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    정말 삭제하시겠습니까? 삭제한 내용은 복구할 수 없습니다.
+                  </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete}>삭제</AlertDialogAction>
+                  <AlertDialogAction onClick={onDelete} disabled={disabled}>
+                    삭제
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-        </>
-      )}
-    </TooltipProvider>
+          )}
+          <button
+            type="button"
+            onClick={onBack}
+            className={BUTTON_CLASS}
+            aria-label={closeLabel}
+            title={closeLabel}
+            disabled={disabled}
+          >
+            {closeLabel === '닫기' ? <X className="size-4.5" /> : <Check className="size-4.5" />}
+            <span className="hidden sm:inline">{closeLabel}</span>
+          </button>
+        </div>
+      </div>
+      <div className="mt-1 min-h-0 flex-1 overflow-y-auto text-xs leading-4 text-[#ffb5b8] sm:text-sm">
+        {error && <p role="alert">{error}</p>}
+      </div>
+    </header>
   );
 }

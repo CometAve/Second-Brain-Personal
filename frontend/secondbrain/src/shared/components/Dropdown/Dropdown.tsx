@@ -2,7 +2,7 @@ import { useModal } from '@/shared/hooks/useModal';
 import { useKeyboardNav } from '@/shared/hooks/useKeyboardNav';
 import type { DropdownProps } from '@/shared/components/Dropdown/Dropdown.types';
 
-const positionClasses = {
+const POSITION_CLASSES = {
   'bottom-right': 'right-0 top-full mt-2',
   'bottom-left': 'left-0 top-full mt-2',
   'top-right': 'right-0 bottom-full mb-2',
@@ -38,15 +38,17 @@ export function Dropdown({
     enabled: enableKeyboardNav,
     isOpen,
     contentRef,
+    onTabExit: onClose,
   });
 
   return (
     <div
       ref={containerRef}
-      className={`absolute z-60 ${positionClasses[position]} transition-all duration-200 ease-out motion-reduce:transition-none ${
+      inert={!isOpen}
+      className={`absolute z-60 ${POSITION_CLASSES[position]} transition-[translate,opacity] duration-150 ease-out motion-reduce:transition-none ${
         isOpen
-          ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
-          : 'pointer-events-none -translate-y-2 scale-95 opacity-0'
+          ? 'pointer-events-auto translate-y-0 opacity-100'
+          : 'pointer-events-none -translate-y-1 opacity-0'
       } ${className}`}
     >
       <div ref={contentRef}>{children}</div>
