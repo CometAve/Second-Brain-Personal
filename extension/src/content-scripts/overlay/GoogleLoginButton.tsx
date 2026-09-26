@@ -5,7 +5,7 @@
  * https://developers.google.com/identity/branding-guidelines
  */
 
-import { useState, useContext } from 'react';
+import { useState, use } from 'react';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import { useExtensionAuth } from '@/hooks/useExtensionAuth';
 
@@ -16,7 +16,7 @@ interface GoogleLoginButtonProps {
 export function GoogleLoginButton({ text = 'signin' }: GoogleLoginButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-  const { resolvedTheme } = useContext(ThemeContext);
+  const { resolvedTheme } = use(ThemeContext);
   const { login } = useExtensionAuth();
 
   const buttonText = {

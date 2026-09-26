@@ -88,13 +88,13 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
   };
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext value={value}>
       <div
         ref={containerRef}
         className={cn(resolvedTheme === 'dark' ? 'dark' : '', 'text-foreground')}
       >
         {children}
       </div>
-    </ThemeContext.Provider>
+    </ThemeContext>
   );
 }

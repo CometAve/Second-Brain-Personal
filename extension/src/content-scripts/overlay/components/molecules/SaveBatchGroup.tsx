@@ -31,7 +31,7 @@ export function SaveBatchGroup({ requests, onRemove }: SaveBatchGroupProps) {
     failed === total ? 'failed' : completed === total ? 'completed' : 'in-progress';
 
   // 타임스탬프
-  const timestamp = requests[0]?.batchTimestamp || Date.now();
+  const timestamp = requests[0].batchTimestamp;
 
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">

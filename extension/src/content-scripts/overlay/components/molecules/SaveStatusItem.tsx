@@ -21,18 +21,22 @@ export function SaveStatusItem({ request, onRemove }: SaveStatusItemProps) {
   // 성공 시 자동 제거 로직
   useEffect(() => {
     if (request.status === 'success') {
+      let removalTimer: ReturnType<typeof setTimeout> | undefined;
       // 2초간 성공 상태 표시
       const displayTimer = setTimeout(() => {
         // 페이드아웃 시작
         setIsRemoving(true);
 
         // 500ms 후 Store에서 제거
-        setTimeout(() => {
+        removalTimer = setTimeout(() => {
           onRemove(request.id);
         }, 500);
       }, 2000);
 
-      return () => clearTimeout(displayTimer);
+      return () => {
+        clearTimeout(displayTimer);
+        clearTimeout(removalTimer);
+      };
     }
   }, [request.status, request.id, onRemove]);
 
@@ -68,7 +72,7 @@ export function SaveStatusItem({ request, onRemove }: SaveStatusItemProps) {
       className={cn(
         'flex items-center gap-2 rounded-md border border-border p-2 transition-all duration-500 hover:bg-accent',
         config.bgClass,
-        isRemoving && 'translate-x-4 opacity-0',
+        request.status === 'success' && isRemoving && 'translate-x-4 opacity-0',
       )}
     >
       <Icon className={cn('size-4 shrink-0', config.iconClass)} />

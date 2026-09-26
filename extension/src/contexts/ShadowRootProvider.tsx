@@ -6,5 +6,5 @@ interface ShadowRootProviderProps {
 }
 
 export function ShadowRootProvider({ children, shadowRoot }: ShadowRootProviderProps) {
-  return <ShadowRootContext.Provider value={shadowRoot}>{children}</ShadowRootContext.Provider>;
+  return <ShadowRootContext value={shadowRoot}>{children}</ShadowRootContext>;
 }
