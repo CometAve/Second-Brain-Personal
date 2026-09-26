@@ -43,5 +43,45 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: ['src/content-scripts/overlay/**/*.{ts,tsx}'],
+    settings: {
+      tailwindcss: { functions: ['cn', 'cva'], cssConfigPath: './src/content-scripts/overlay.css' },
+    },
+    rules: {
+      // The plugin reads the Tailwind theme but does not recognize this custom CSS selector.
+      'tailwindcss/no-custom-classname': ['warn', { whitelist: ['extension-overlay-border'] }],
+    },
+  },
+  {
+    files: ['src/sidepanel/**/*.{ts,tsx}'],
+    settings: {
+      tailwindcss: {
+        functions: ['cn', 'cva'],
+        cssConfigPath: './src/sidepanel/styles/sidepanel.css',
+      },
+    },
+    rules: {
+      'tailwindcss/no-custom-classname': ['warn', { whitelist: ['scrollbar-custom'] }],
+    },
+  },
+  {
+    files: ['src/content-scripts/dragSearch/**/*.{ts,tsx}'],
+    rules: {
+      // These selectors live in the injected Shadow DOM stylesheet in drag-search-entry.tsx.
+      'tailwindcss/no-custom-classname': [
+        'warn',
+        {
+          whitelist: [
+            'scrollbar-custom',
+            'floating-button',
+            'action-button',
+            'close-button',
+            'icon',
+          ],
+        },
+      ],
+    },
+  },
   eslintConfigPrettier,
 ]);

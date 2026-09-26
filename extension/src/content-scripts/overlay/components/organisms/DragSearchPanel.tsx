@@ -110,9 +110,9 @@ export function DragSearchPanel({
               </button>
             </div>
             <div className="flex flex-col gap-2">
-              {searchHistory.map((item, index) => (
+              {searchHistory.map((item) => (
                 <button
-                  key={`${item.keyword}-${index}`}
+                  key={`${item.keyword}-${item.timestamp}`}
                   onClick={() => handleHistoryClick(item.keyword)}
                   className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
                 >

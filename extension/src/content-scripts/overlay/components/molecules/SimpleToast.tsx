@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
-import { toastQueue, listeners, removeToast, type Toast } from './simpleToastStore';
+import { getToastSnapshot, removeToast, subscribeToToasts, type Toast } from './simpleToastStore';
 
 /**
  * Toast Item Component
@@ -86,20 +86,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
  * - Global toast queue management
  */
 export function SimpleToastContainer() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
-
-  useEffect(() => {
-    const listener = () => {
-      setToasts([...toastQueue]);
-    };
-
-    listeners.add(listener);
-    listener(); // Initial sync
-
-    return () => {
-      listeners.delete(listener);
-    };
-  }, []);
+  const toasts = useSyncExternalStore(subscribeToToasts, getToastSnapshot);
 
   if (toasts.length === 0) return null;
 

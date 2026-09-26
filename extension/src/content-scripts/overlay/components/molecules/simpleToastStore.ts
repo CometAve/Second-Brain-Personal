@@ -5,8 +5,17 @@ export interface Toast {
 }
 
 // Global toast queue (outside React)
-export let toastQueue: Toast[] = [];
-export const listeners = new Set<() => void>();
+let toastQueue: Toast[] = [];
+const listeners = new Set<() => void>();
+
+export function getToastSnapshot(): Toast[] {
+  return toastQueue;
+}
+
+export function subscribeToToasts(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 function notifyListeners() {
   listeners.forEach((listener) => listener());

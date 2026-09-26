@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, use } from 'react';
 
 /**
  * Shadow Root Context
@@ -8,5 +8,5 @@ import { createContext, useContext } from 'react';
 export const ShadowRootContext = createContext<ShadowRoot | HTMLElement | null>(null);
 
 export function useShadowRoot() {
-  return useContext(ShadowRootContext);
+  return use(ShadowRootContext);
 }

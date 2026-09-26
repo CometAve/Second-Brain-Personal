@@ -19,7 +19,9 @@ export function SidePanelApp() {
   const [relatedNotes, setRelatedNotes] = useState<RelatedNoteItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [colorMode, setColorMode] = useState<'light' | 'dark'>('light');
+  const [colorMode, setColorMode] = useState<'light' | 'dark'>(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+  );
 
   // Storage에서 noteId 읽기
   useEffect(() => {
@@ -56,7 +58,6 @@ export function SidePanelApp() {
     // 초기 설정
     const applyTheme = (isDark: boolean) => {
       const mode = isDark ? 'dark' : 'light';
-      setColorMode(mode);
       document.documentElement.setAttribute('data-color-mode', mode);
       document.documentElement.classList.toggle('dark', isDark);
     };
@@ -66,6 +67,7 @@ export function SidePanelApp() {
     // 시스템 테마 변경 감지
     const handleChange = (e: MediaQueryListEvent) => {
       applyTheme(e.matches);
+      setColorMode(e.matches ? 'dark' : 'light');
     };
 
     mediaQuery.addEventListener('change', handleChange);
