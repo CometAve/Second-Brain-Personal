@@ -5,18 +5,23 @@ import java.util.List;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Values;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uknowklp.secondbrain.api.note.dto.VectorSearchResult;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class VectorSearchService {
 
 	private final Driver neo4jDriver;
+	private final String embeddingModel;
+
+	public VectorSearchService(Driver neo4jDriver, @Value("${gemini.embedding-model}") String embeddingModel) {
+		this.neo4jDriver = neo4jDriver;
+		this.embeddingModel = "google-cloud/" + embeddingModel + "/1536/prefix-v1";
+	}
 
 	// 벡터 인덱스 이름 정확하게 적어야함
 	private static final String VECTOR_INDEX_NAME = "note_embeddings";
@@ -38,6 +43,7 @@ public class VectorSearchService {
             CALL db.index.vector.queryNodes($indexName, $vectorLimit, $embedding)
             YIELD node AS similar_note, score
             WHERE similar_note.user_id = $userId
+              AND similar_note.embedding_model = $embeddingModel
               AND score >= $threshold
             RETURN similar_note.note_id AS noteId,
                    similar_note.title AS title,
@@ -53,6 +59,7 @@ public class VectorSearchService {
 				"vectorLimit", VECTOR_SEARCH_LIMIT,
 				"embedding", queryEmbedding,
 				"userId", userId,
+				"embeddingModel", embeddingModel,
 				"threshold", SIMILARITY_THRESHOLD,
 				"limit", limit
 			));

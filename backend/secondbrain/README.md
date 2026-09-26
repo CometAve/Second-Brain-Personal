@@ -15,7 +15,7 @@ Spring Boot REST API, JWT/OAuth 로그인, PostgreSQL 노트 저장, Redis 초�
 | Spring Cloud AWS | **4.1.1** | S3 자동 설정 및 실제 HTTP 요청을 로컬 stub으로 검증 |
 | AWS SDK BOM | **2.55.4** | AWSpring 기본 2.54.3 대신 모든 SDK 모듈을 최신으로 정렬 |
 | springdoc | **3.1.1** | Boot 4 지원, 실제 OpenAPI 응답 검증 |
-| OpenAI Java | **4.69.0** | 최신 stable, embedding 요청·응답을 로컬 stub으로 검증 |
+| Google Auth Library | **1.50.0** | Vertex AI REST 호출에 사용할 ADC 토큰 조회·갱신 |
 | Google API client | **2.9.1** | 공용 웹 Google ID token verifier 유지 |
 | JJWT | **0.13.0** | API·impl·Jackson 모듈 동일 버전, 서명·파싱 검증 |
 | spring-dotenv | **5.1.0** | 최신 stable |
@@ -23,7 +23,7 @@ Spring Boot REST API, JWT/OAuth 로그인, PostgreSQL 노트 저장, Redis 초�
 | Neo4j Java driver | **6.3.0** | Boot 기본 6.1.0에서 갱신, Neo4j 2026.09 연결 검증 |
 | Lombok | **1.18.48** | Boot 기본 1.18.46에서 갱신 |
 | Jackson 3 BOM | **3.2.3** | 애플리케이션 HTTP·Redis·Rabbit 직렬화 |
-| Jackson 2 BOM | **2.22.3** | OpenAI/JJWT/Swagger 등 내부 의존성이 사용하는 모듈 정렬 |
+| Jackson 2 BOM | **2.22.3** | JJWT/Swagger 등 내부 의존성이 사용하는 모듈 정렬 |
 | Hibernate ORM / Validator | **7.4.10.Final / 9.1.4.Final** | 같은 안정 계열의 최신 패치, JPA 및 입력 검증 유지 |
 | Netty BOM | **4.2.18.Final** | 모든 Netty 모듈과 macOS DNS native 모듈을 함께 정렬 |
 | RabbitMQ Java client | **5.36.0** | 최신 안정 클라이언트, 로컬 broker 연결·선언 확인 |
@@ -65,9 +65,10 @@ AWSpring의 공식 호환표는 Boot 4.0.x를 명시하므로 Boot 4.1 지원을
 - Boot의 기본 HTTP 변환기가 공용 `JsonMapper`를 사용하도록 했습니다. 변환기를 배열의 고정 위치에 추가하던 `WebConfig`는 제거했습니다.
 - `RestTemplateBuilder` 패키지와 Boot 4의 REST client/MVC/security OAuth starter 구성을 반영했습니다.
 - Elasticsearch Rest5를 사용하며, 이전 HTTP4 클래스와 모든 인증서를 신뢰하던 개발용 TLS 설정을 제거했습니다. 로컬 ES는 HTTP, 명시적으로 TLS를 사용하는 연결은 JVM trust store를 따릅니다.
-- OpenAI embedding DTO의 패키지 이동과 `List<Float>` 응답을 반영했습니다. 애플리케이션의 `List<Double>` 계약, `text-embedding-3-small` 모델과 실제 1536차원 설정은 유지했습니다.
-- OpenAI SDK가 가져오던 구 `swagger-annotations`를 제외하고 springdoc의 Jakarta annotations로 통일했습니다. 두 라이브러리가 같은 클래스를 제공하여 실제 `/v3/api-docs` 요청에서 발생한 `Schema.$dynamicRef()` 오류를 해결합니다.
-- 실제 의존성이 없던 `springAiVersion` 및 `spring.ai.*` 설정을 제거했습니다. 사용 중인 OpenAI SDK와 `gms.*` 설정은 유지합니다.
+- 과거 GMS/OpenAI embedding 경로를 Google Cloud Vertex AI `gemini-embedding-2`로 바꿨습니다. 검색 입력은 Python worker와 합의한 `task: search result | query: {query}` 형식이며 1536차원, 유한 숫자, 0이 아닌 벡터를 확인합니다. Neo4j 검색은 `google-cloud/{model}/1536/prefix-v1` fingerprint의 벡터만 사용합니다.
+- 리마인더 질문 생성은 Vertex AI `gemini-3.8-flash` `generateContent`와 `thinkingLevel: LOW`를 사용합니다. 빈 응답이나 HTTP 실패는 기존의 비상 질문 경로로 전달됩니다.
+- Google Auth Library의 ADC를 첫 AI 요청 때 읽고 요청마다 만료 토큰을 갱신합니다. 기동 자체에는 ADC가 필요하지 않습니다. `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`(기본 `global`), `GEMINI_EMBEDDING_MODEL`, `GEMINI_GENERATION_MODEL`을 사용합니다. 로컬 프로필의 API 주소는 비활성 loopback 값이며 실제 Cloud 호출에는 `GOOGLE_CLOUD_API_BASE_URL=https://aiplatform.googleapis.com`을 설정합니다.
+- RabbitMQ 소비 큐는 `RABBITMQ_QUEUE`로 설정할 수 있습니다. 기존 기본값은 `note_creation_queue`입니다.
 - 로컬 CORS 기본값은 기존 확장 프로그램의 content script 요청을 위해 `*` 패턴입니다. `CORS_ALLOWED_ORIGIN`으로 허용 패턴을 명시할 수 있습니다.
 
 ## 빌드와 테스트
@@ -98,7 +99,7 @@ Java 26을 `JAVA_HOME`으로 지정한 뒤 이 디렉터리에서 실행합니�
 ./gradlew dependencies --configuration runtimeClasspath
 ```
 
-`application-local.yml`은 IDE 실행에 맞춰 데이터 서비스 주소를 `localhost`로 제공합니다. Compose는 컨테이너 서비스 DNS로 덮어씁니다. 비밀번호와 RabbitMQ vhost 기본값은 `infra/local/.env.example`과 동일합니다. 개인 자격증명을 넣기 전 AI·S3·TTS 호출은 loopback 비활성 주소로 향합니다.
+`application-local.yml`은 IDE 실행에 맞춰 데이터 서비스 주소를 `localhost`로 제공합니다. Compose는 컨테이너 서비스 DNS로 덮어씁니다. 비밀번호와 RabbitMQ vhost 기본값은 `infra/local/.env.example`과 동일합니다. 개인 자격증명을 넣기 전 AI·S3·TTS 호출은 loopback 비활성 주소로 향합니다. AI 호출 시 ADC가 필요하며 `GOOGLE_APPLICATION_CREDENTIALS` 또는 gcloud ADC를 사용할 수 있습니다.
 
 테스트는 개발자의 `.env`를 자동으로 읽지 않도록 빈 `build/test-work`에서 실행합니다. 테스트의 Google/AWS/AI 값은 합성 값이며 실제 외부 API는 호출하지 않습니다.
 
@@ -109,6 +110,13 @@ Java 26을 `JAVA_HOME`으로 지정한 뒤 이 디렉터리에서 실행합니�
 - 통합 테스트 **2개 성공**, 실패·오류·skip **0개**. PostgreSQL 18.6 쿼리, Redis 8.10.2 임시 키 저장·조회·정리, ES 9.5.4 인덱스, Neo4j 2026.09.0 쿼리, RabbitMQ 4.3.6 exchange/queue 조회, 실제 `/health` 및 `/v3/api-docs` HTTP 200을 확인했습니다.
 - 기존 노트 테스트의 누락된 이벤트 producer mock을 추가했습니다. DTO에 연결되지 않은 multipart fixture 대신 현행 JSON API에 맞춰 이미지 URL을 포함한 본문 보존을 검증합니다.
 - 실제 외부 Google 로그인, 유료 LLM, AWS S3, Clova 요청은 검증 범위에 포함하지 않습니다. 컨테이너 전체 실행 검증은 루트 로컬 환경 문서의 기록을 참고합니다.
+
+2026-09-26 Gemini 이전 검증: Java 26.0.2.1+1에서 `./gradlew test bootJar` 성공,
+기본 테스트 **79개 성공**, 실패·오류·skip **0개**. Vertex AI 요청 본문과 Bearer 헤더,
+임베딩 차원, ADC 토큰 갱신, 생성 응답 파싱, 벡터 fingerprint 필터, 설정한 RabbitMQ 큐 바인딩을 로컬 stub과
+단위 테스트로 확인했습니다. 별도 합성 프롬프트 1회로 Java ADC, Vertex AI 생성 요청과
+응답 파싱을 확인했습니다. 기본 테스트에는 실제 Cloud 호출을 포함하지 않았고 컨테이너
+통합은 이 검증 기록에 포함하지 않습니다.
 
 ## 재현성과 체크섬
 
@@ -127,7 +135,7 @@ Java 26을 `JAVA_HOME`으로 지정한 뒤 이 디렉터리에서 실행합니�
 - [Gradle 안정 배포 및 체크섬](https://services.gradle.org/versions/current), [Java 호환표](https://docs.gradle.org/current/userguide/compatibility.html)
 - [Temurin 26.0.2.1+1 공식 배포](https://github.com/adoptium/temurin26-binaries/releases/tag/jdk-26.0.2.1%2B1)
 - [AWSpring 호환표](https://github.com/awspring/spring-cloud-aws/tree/v4.1.1#compatibility-with-spring-project-versions), [AWS SDK 메타데이터](https://repo.maven.apache.org/maven2/software/amazon/awssdk/bom/maven-metadata.xml)
-- [springdoc](https://springdoc.org/), [OpenAI Java 메타데이터](https://repo.maven.apache.org/maven2/com/openai/openai-java/maven-metadata.xml), [JJWT](https://github.com/jwtk/jjwt/releases)
+- [springdoc](https://springdoc.org/), [Google Auth Library Java](https://docs.cloud.google.com/java/getting-started/getting-started-with-google-auth-library), [Vertex AI embedContent REST](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/projects.locations.publishers.models/embedContent), [Vertex AI generateContent REST](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/start/quickstart), [JJWT](https://github.com/jwt/jjwt/releases)
 - [Google API 메타데이터](https://repo.maven.apache.org/maven2/com/google/api-client/google-api-client/maven-metadata.xml), [spring-dotenv 메타데이터](https://repo.maven.apache.org/maven2/me/paulschwarz/spring-dotenv/maven-metadata.xml)
 - [Spring Data ES 이전 안내](https://docs.spring.io/spring-data/elasticsearch/reference/migration-guides/migration-guide-5.5-6.0.html), [Neo4j driver 호환표](https://neo4j.com/docs/java-manual/current/install/)
 - [Boot 4.1.1 관리 버전 원본](https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-dependencies/4.1.1/spring-boot-dependencies-4.1.1.pom), [PostgreSQL JDBC](https://repo.maven.apache.org/maven2/org/postgresql/postgresql/maven-metadata.xml), [Spring Data BOM](https://repo.maven.apache.org/maven2/org/springframework/data/spring-data-bom/maven-metadata.xml)

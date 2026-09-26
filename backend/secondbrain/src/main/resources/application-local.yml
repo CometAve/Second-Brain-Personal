@@ -35,17 +35,15 @@ ACCESS_KEY: local-not-configured
 SECRET_ACCESS_KEY: local-not-configured
 REGION: ap-northeast-2
 BUCKET_NAME: secondbrain-local
-GMS_API_KEY: local-not-configured
-GMS_MODEL: local-not-configured
-GMS_EMBEDDING_MODEL: text-embedding-3-small
-GMS_MAX_TOKENS: 1024
-GMS_TEMPERATURE: 0.7
+GOOGLE_CLOUD_PROJECT: local-not-configured
+GOOGLE_CLOUD_LOCATION: global
+GEMINI_EMBEDDING_MODEL: gemini-embedding-2
+GEMINI_GENERATION_MODEL: gemini-3.8-flash
 CLOVA_CLIENT_ID: local-not-configured
 CLOVA_CLIENT_SECRET: local-not-configured
 
 # 명시적으로 설정하기 전 외부 API에 요청하지 않도록 loopback으로 제한합니다.
-GMS_BASE_URL: http://127.0.0.1:9
-GMS_OPENAI_BASE_URL: http://127.0.0.1:9/v1
+GOOGLE_CLOUD_API_BASE_URL: http://127.0.0.1:9
 CLOVA_API_URL: http://127.0.0.1:9/tts
 spring:
   datasource:

@@ -102,15 +102,16 @@ logging:
     root: INFO
     uknowklp.secondbrain: DEBUG
 
-# GMS API 설정
-gms:
-  api-key: ${GMS_API_KEY}
-  model: ${GMS_MODEL}
-  embedding-model: ${GMS_EMBEDDING_MODEL}
-  base-url: ${GMS_BASE_URL}
-  openai-base-url: ${GMS_OPENAI_BASE_URL}
-  max-tokens: ${GMS_MAX_TOKENS}
-  temperature: ${GMS_TEMPERATURE}
+# Google Cloud Vertex AI (인증은 Application Default Credentials)
+gemini:
+  project: ${GOOGLE_CLOUD_PROJECT}
+  location: ${GOOGLE_CLOUD_LOCATION:global}
+  embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-2}
+  generation-model: ${GEMINI_GENERATION_MODEL:gemini-3.8-flash}
+  base-url: ${GOOGLE_CLOUD_API_BASE_URL:https://aiplatform.googleapis.com}
+
+rabbitmq:
+  note-creation-queue: ${RABBITMQ_QUEUE:note_creation_queue}
 
 # Naver Clova Voice TTS 설정
 clova:

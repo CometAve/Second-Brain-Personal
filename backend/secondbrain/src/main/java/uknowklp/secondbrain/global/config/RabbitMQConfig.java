@@ -12,6 +12,7 @@ import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 
 @Configuration
@@ -37,8 +38,8 @@ public class RabbitMQConfig {
 
 	// 노트 생성 이벤트 큐 (FastAPI Consumer가 사용 중)
 	@Bean
-	public Queue noteCreationQueue(){
-		return QueueBuilder.durable("note_creation_queue")
+	public Queue noteCreationQueue(@Value("${rabbitmq.note-creation-queue:note_creation_queue}") String queueName){
+		return QueueBuilder.durable(queueName)
 			.build();
 	}
 
