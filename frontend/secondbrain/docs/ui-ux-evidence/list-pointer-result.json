@@ -1,0 +1,40 @@
+{
+  "passed": 8,
+  "checks": [
+    "작업이 만든 QA104만 수정한다",
+    "보이는 블록 핸들과 번호 항목을 찾는다",
+    "다른 목록으로 옮긴 즉시 번호가 순서대로 맞는다",
+    "실제 포인터 드래그가 내용을 보존하며 순서를 바꾼다",
+    "드래그 결과의 실제 PUT이 성공한다",
+    "재진입한 GET이 저장한 Markdown과 같다",
+    "재진입 뒤 항목 순서와 모든 문장이 유지된다",
+    "기존 할 일 완료 상태가 유지된다"
+  ],
+  "qaNoteIds": [
+    104
+  ],
+  "before": [
+    "SB QA 목록 muhgwbbo 글머리 셋째",
+    "SB QA 목록 muhgwbbo 번호 항목",
+    "SB QA 목록 muhgwbbo 글머리 둘째",
+    "SB QA 목록 muhgwbbo 글머리 첫째",
+    "SB QA 목록 muhgwbbo 할 일 항목"
+  ],
+  "after": [
+    "SB QA 목록 muhgwbbo 번호 항목",
+    "SB QA 목록 muhgwbbo 글머리 셋째",
+    "SB QA 목록 muhgwbbo 글머리 둘째",
+    "SB QA 목록 muhgwbbo 글머리 첫째",
+    "SB QA 목록 muhgwbbo 할 일 항목",
+    ""
+  ],
+  "markers": [
+    "1.",
+    "2.",
+    "3.",
+    "4."
+  ],
+  "markdown": "1. SB QA 목록 muhgwbbo 번호 항목\n2. SB QA 목록 muhgwbbo 글머리 셋째\n3. SB QA 목록 muhgwbbo 글머리 둘째\n4. SB QA 목록 muhgwbbo 글머리 첫째\n\n* [x] SB QA 목록 muhgwbbo 할 일 항목\n",
+  "method": "Real Playwright mouse drag, live marker check, PUT and fresh GET; no synthetic DragEvent",
+  "checkboxKeyboardPassed": true
+}

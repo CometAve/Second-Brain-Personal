@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>로딩 로고 검수</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, sans-serif; color: #eeeaf8; background: #11101f; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { max-width: 1040px; margin: 0 auto; padding: 32px 24px; }
+      h1 { margin: 0 0 12px; font-size: 22px; font-weight: 600; }
+      p { line-height: 1.6; }
+      .note { color: #bfb9d0; font-size: 14px; margin: 0 0 24px; }
+      .comparisons { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 32px; }
+      .pair { display: flex; gap: 16px; align-items: center; }
+      figure { margin: 0; text-align: center; }
+      figcaption { font-size: 13px; margin-top: 12px; color: #d0c9df; }
+      .original { position: relative; width: var(--side); height: var(--side); }
+      .original img { position: absolute; top: 50%; left: 50%; width: 120.59%; height: 85.88%; max-width: none; transform: translate(-50%, -50%); object-fit: contain; }
+      canvas { display: block; width: var(--side); height: var(--side); }
+      .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 32px 0 20px; }
+      button { color: inherit; background: #272237; border: 1px solid #625477; border-radius: 6px; padding: 9px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+      button:hover { background: #393048; }
+      button:focus-visible, input:focus-visible { outline: 2px solid #c7acff; outline-offset: 3px; }
+      .angle { display: flex; align-items: center; gap: 12px; width: 100%; }
+      input[type="range"] { min-width: 100px; flex: 1; accent-color: #b695ed; }
+      output { min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+      .details { border-top: 1px solid #30293e; padding-top: 16px; font-size: 13px; color: #bfb9d0; }
+      a { color: #d6beff; }
+      #error { color: #ffc4be; }
+      @media (max-width: 570px) { main { padding: 24px 16px; } .pair.large { gap: 8px; } .pair.large figure { width: calc((100vw - 40px) / 2); } .pair.large .original, .pair.large canvas { width: 100%; height: auto; aspect-ratio: 1; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>로딩 로고 검수</h1>
+      <p class="note">실제 앱 화면이 아닌 비교 자료입니다. 왼쪽은 원본 자산, 오른쪽은 앱의 렌더러로 그린 추정 입체입니다. 한 바퀴는 4.5초이며, 원본의 정확한 3D 복원을 뜻하지 않습니다.</p>
+      <div class="comparisons">
+        <div class="pair large">
+          <figure>
+            <div class="original" style="--side: 240px"><img src="/src/shared/components/icon/Logo.svg" alt="원본 로고" /></div>
+            <figcaption>원본 · 240px 비교 영역</figcaption>
+          </figure>
+          <figure>
+            <canvas id="large" style="--side: 240px" aria-label="추정 입체 로고 확대 비교"></canvas>
+            <figcaption>추정 입체 · 240px</figcaption>
+          </figure>
+        </div>
+        <div class="pair">
+          <figure>
+            <div class="original" style="--side: 96px"><img src="/src/shared/components/icon/Logo.svg" alt="실제 크기의 원본 로고" /></div>
+            <figcaption>원본 · 96px 비교 영역</figcaption>
+          </figure>
+          <figure>
+            <canvas id="actual" style="--side: 96px" aria-label="추정 입체 로고 실제 96픽셀 크기"></canvas>
+            <figcaption>추정 입체 · 96px</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="controls" aria-label="회전 검수 조작">
+        <button id="toggle" type="button">일시 정지</button>
+        <button type="button" data-angle="0">0°</button>
+        <button type="button" data-angle="60">60°</button>
+        <button type="button" data-angle="120">120°</button>
+        <button type="button" data-angle="180">180°</button>
+        <div class="angle">
+          <label for="angle">각도</label>
+          <input id="angle" type="range" min="0" max="360" step="1" value="0" />
+          <output id="value" for="angle">0°</output>
+        </div>
+      </div>
+      <p id="error" role="alert" hidden></p>
+      <div class="details">
+        <p>47개 고정 꼭짓점과 135개 고정 간선을 사용합니다. 각도 버튼과 슬라이더는 회전을 정지하고 해당 각도를 보여 줍니다. 재생하면 그 각도에서 이어집니다.</p>
+        <p>이 페이지는 실제 <code>drawLogoFrame</code>을 불러오고, 검수 조작을 위한 별도 시계로 두 크기를 동기화합니다. 앱의 로딩 지연·정리 동작 검사는 별도입니다. 숨긴 탭에서는 정지하며, 동작 줄이기 설정에서는 정지 상태로 시작합니다.</p>
+        <p><a href="loading-logo-comparison.png">원본과 대표 각도</a> · <a href="loading-logo-47-360.png">전체 각도</a> · <a href="loading-logo-geometry.md">형상과 검증 범위</a></p>
+      </div>
+    </main>
+    <script type="module">
+      import { drawLogoFrame } from '/src/shared/components/loading-logo-renderer.ts';
+
+      const toggle = document.querySelector('#toggle');
+      const slider = document.querySelector('#angle');
+      const value = document.querySelector('#value');
+      const error = document.querySelector('#error');
+      const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const periodMs = 4500;
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      let degrees = 0;
+      let playing = !motion.matches;
+      let frame = 0;
+      let previous = null;
+      const surfaces = [];
+
+      for (const [id, side] of [['large', 240], ['actual', 96]]) {
+        const canvas = document.getElementById(id);
+        const context = canvas.getContext('2d');
+        if (!context) {
+          error.hidden = false;
+          error.textContent = 'Canvas를 사용할 수 없습니다. 원본 이미지로 확인해 주세요.';
+          playing = false;
+          break;
+        }
+        canvas.width = Math.round(side * ratio);
+        canvas.height = Math.round(side * ratio);
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
+        surfaces.push({ context, side });
+      }
+
+      function paint() {
+        for (const { context, side } of surfaces) drawLogoFrame(context, side, degrees * Math.PI / 180);
+        slider.value = String(Math.round(degrees));
+        value.value = `${Math.round(degrees)}°`;
+        toggle.textContent = playing ? '일시 정지' : '재생';
+        toggle.setAttribute('aria-pressed', String(playing));
+      }
+
+      function tick(now) {
+        frame = 0;
+        if (!playing || document.hidden) return;
+        if (previous !== null) degrees = (degrees + (now - previous) / periodMs * 360) % 360;
+        previous = now;
+        paint();
+        frame = requestAnimationFrame(tick);
+      }
+
+      function updateActivity() {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        previous = null;
+        paint();
+        if (playing && !document.hidden) frame = requestAnimationFrame(tick);
+      }
+
+      function selectAngle(angle) {
+        playing = false;
+        degrees = angle;
+        updateActivity();
+      }
+
+      function updateMotion() {
+        if (motion.matches) playing = false;
+        updateActivity();
+      }
+
+      toggle.addEventListener('click', () => {
+        playing = !playing;
+        updateActivity();
+      });
+      slider.addEventListener('input', () => selectAngle(Number(slider.value)));
+      for (const button of document.querySelectorAll('[data-angle]')) {
+        button.addEventListener('click', () => selectAngle(Number(button.dataset.angle)));
+      }
+      document.addEventListener('visibilitychange', updateActivity);
+      motion.addEventListener('change', updateMotion);
+      window.addEventListener('pagehide', () => {
+        cancelAnimationFrame(frame);
+        document.removeEventListener('visibilitychange', updateActivity);
+        motion.removeEventListener('change', updateMotion);
+      }, { once: true });
+      updateActivity();
+    </script>
+  </body>
+</html>
