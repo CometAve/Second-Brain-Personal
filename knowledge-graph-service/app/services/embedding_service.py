@@ -1,89 +1,79 @@
-from openai import OpenAI
-from app.core.config import get_settings
-import tiktoken
+"""Google Cloud Gemini document and search-query embeddings."""
+
 import logging
-from typing import Tuple, List
+import math
+from typing import List, Tuple
+
+from google import genai
+from google.genai import types
+
+from app.core.config import get_settings
+from app.core.constants import VectorConfig
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
 
 
 class EmbeddingService:
-    """OpenAI 임베딩 생성"""
+    """Create compatible 1536-dimensional vectors using application default credentials."""
 
-    def __init__(self):
-        # OpenAI 클라이언트 초기화
-        if settings.openai_base_url:
-            # GMS 서비스 사용
-            self.client = OpenAI(
-                api_key=settings.openai_api_key, base_url=settings.openai_base_url
-            )
-            logger.debug(f"✅ OpenAI 클라이언트 (GMS): {settings.openai_base_url}")
+    def __init__(self, client: genai.Client | None = None):
+        settings = get_settings()
+        self.model = settings.gemini_embedding_model
+        self.model_tag = (
+            f"google-cloud/{self.model}/{VectorConfig.EMBEDDING_DIMENSION}/prefix-v1"
+        )
+        self.client = client or genai.Client(
+            enterprise=True,
+            project=settings.google_cloud_project,
+            location=settings.google_cloud_location,
+        )
+
+    def generate_embedding(
+        self, text: str, *, title: str | None = None, is_query: bool = False
+    ) -> Tuple[List[float], int]:
+        """Return a vector and the provider's input token count, when available.
+
+        Gemini Embedding 2 does not support the older task_type parameter. The
+        explicit prefixes distinguish document and retrieval-query inputs.
+        """
+        if not text or not text.strip():
+            raise ValueError("Embedding input must not be empty")
+
+        if is_query:
+            contents = f"task: search result | query: {text}"
         else:
-            # 기본 OpenAI API 사용
-            self.client = OpenAI(api_key=settings.openai_api_key)
-            logger.debug("✅ OpenAI 클라이언트 (Base API)")
+            contents = f'title: {title or "none"} | text: {text}'
 
-        self.model = settings.openai_model
-        # 서버 시작과 health 확인에는 외부 tokenizer 다운로드가 필요하지 않다.
-        self._encoding = None
+        response = self.client.models.embed_content(
+            model=self.model,
+            contents=contents,
+            config=types.EmbedContentConfig(
+                output_dimensionality=VectorConfig.EMBEDDING_DIMENSION,
+                auto_truncate=False,
+            ),
+        )
+        embeddings = response.embeddings
+        if not embeddings or len(embeddings) != 1 or embeddings[0].values is None:
+            raise ValueError("Gemini returned no embedding")
 
-    @property
-    def encoding(self):
-        if self._encoding is None:
-            self._encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        return self._encoding
+        values = embeddings[0].values
+        if (
+            len(values) != VectorConfig.EMBEDDING_DIMENSION
+            or any(not math.isfinite(value) for value in values)
+            or not any(value != 0 for value in values)
+        ):
+            raise ValueError("Gemini returned an invalid embedding vector")
 
-    def count_tokens(self, text: str) -> int:
-        """
-        토큰 수 계산
-
-        Args:
-            text: 계산할 텍스트
-
-        Returns:
-            토큰 개수
-        """
-        return len(self.encoding.encode(text))
-
-    def generate_embedding(self, text: str) -> Tuple[List[float], int]:
-        """
-        임베딩 생성 (전체 내용, 제한 없음)
-
-        Args:
-            text: 임베딩할 텍스트 (전체 노트 내용)
-
-        Returns:
-            (임베딩 벡터, 토큰 개수)
-
-        Raises:
-            Exception: OpenAI API 호출 실패
-        """
-        try:
-            # 1. 토큰 수 계산 (정보용)
-            token_count = self.count_tokens(text)
-            logger.debug(f"📊 토큰 수: {token_count}개")
-
-            # 2. OpenAI API 호출 (제한 없이 전체 임베딩)
-            logger.debug(f"🤖 임베딩 생성 중...")
-
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=text,  # 👈 전체 내용 그대로
-                encoding_format="float",
-            )
-
-            # 3. 임베딩 추출
-            embedding = response.data[0].embedding
-
-            logger.debug(f"✅ 임베딩 생성 완료: {len(embedding)}차원")
-
-            return embedding, token_count
-
-        except Exception as e:
-            logger.error(f"❌ 임베딩 생성 실패: {e}")
-            raise
+        statistics = embeddings[0].statistics
+        if statistics and statistics.truncated:
+            raise ValueError("Gemini truncated the embedding input")
+        token_count = (
+            int(statistics.token_count)
+            if statistics and statistics.token_count is not None
+            else 0
+        )
+        logger.debug("Embedding generated: %s dimensions", len(values))
+        return values, token_count
 
 
-# 싱글톤 인스턴스
 embedding_service = EmbeddingService()

@@ -55,10 +55,7 @@ class AgentSearchService:
             }
         except Exception as e:
             logger.error(f"error : {e}")
-            return {
-                "response": "",
-                "documents": [],
-            }
+            raise
 
     async def mcp_search(
         self,
@@ -102,7 +99,7 @@ class AgentSearchService:
 
         except Exception as e:
             logger.error(f"error : {e}")
-            return {"documents": []}
+            raise
     
     def image_graph(self, filename="search_graph.png"):
         """그래프를 PNG 파일로 저장"""

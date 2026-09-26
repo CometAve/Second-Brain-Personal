@@ -94,16 +94,7 @@ class Nodes:
 
         except Exception as e:
             logger.error(f"❌ Pre-filter 에러: {str(e)}")
-
-            traceback.print_exc()
-
-            # 기본값: similarity
-            return {
-                **state,
-                "original_query": state.get("original_query", ""),
-                "filters": {},
-                "search_type": "direct_answer",
-            }
+            raise
 
     @staticmethod
     async def simple_lookup_node(state: State) -> State:
@@ -175,14 +166,7 @@ class Nodes:
 
         except Exception as e:
             logger.error(f"❌ Simple Lookup 에러: {str(e)}")
-            import traceback
-
-            traceback.print_exc()
-
-            return {
-                **state,
-                "documents": [],
-            }
+            raise
 
     @staticmethod
     async def similarity_search_node(state: State) -> State:
@@ -218,7 +202,9 @@ class Nodes:
 
             # 2. 쿼리 임베딩 (EmbeddingService 사용)
             logger.debug("📊 임베딩 생성 중...")
-            query_embedding, token_count = embedding_service.generate_embedding(query)
+            query_embedding, token_count = embedding_service.generate_embedding(
+                query, is_query=True
+            )
 
             logger.debug(
                 f"✅ 임베딩 완료 (차원: {len(query_embedding)}, 토큰: {token_count})"
@@ -227,6 +213,7 @@ class Nodes:
             # 3. Cypher 쿼리 생성
             cypher, params = build_similarity_search_cypher(
                 embedding=query_embedding,
+                embedding_model=embedding_service.model_tag,
                 user_id=user_id,
                 timespan=timespan,
                 limit=SEARCH_LIMIT,
@@ -280,14 +267,7 @@ class Nodes:
 
         except Exception as e:
             logger.error(f"❌ Similarity Search 에러: {str(e)}")
-            import traceback
-
-            traceback.print_exc()
-
-            return {
-                **state,
-                "documents": [],
-            }
+            raise
 
     @staticmethod
     async def relevance_check_node(state: State) -> State:
@@ -328,28 +308,22 @@ class Nodes:
             # 3. 각 문서 체크 (병렬)
             async def check_single_document(doc: dict, idx: int) -> tuple[dict, bool]:
                 """단일 문서 체크"""
-                try:
-                    title = doc.get("title", "")
+                title = doc.get("title", "")
 
-                    # 프롬프트 생성
-                    prompt = Prompts.RELEVANCE_CHECK_PROMPT.format(
-                        query=original_query, title=title
-                    )
+                # 프롬프트 생성
+                prompt = Prompts.RELEVANCE_CHECK_PROMPT.format(
+                    query=original_query, title=title
+                )
 
-                    # LLM 호출
-                    result = await relevance_model.ainvoke(prompt)
+                # LLM 호출
+                result = await relevance_model.ainvoke(prompt)
 
-                    logger.debug(
-                        f"  [{idx+1}] {title}: "
-                        f"{'✅ 관련' if result.is_relevant else '❌ 무관'}"
-                    )
+                logger.debug(
+                    f"  [{idx+1}] {title}: "
+                    f"{'✅ 관련' if result.is_relevant else '❌ 무관'}"
+                )
 
-                    return doc, result.is_relevant
-
-                except Exception as e:
-                    logger.error(f"문서 체크 실패 [{doc.get('title')}]: {e}")
-                    # 에러 시 관련 없음으로 처리
-                    return doc, False
+                return doc, result.is_relevant
 
             # 병렬 처리
             logger.debug("🔄 병렬 체크 중...")
@@ -378,10 +352,7 @@ class Nodes:
 
         except Exception as e:
             logger.error(f"❌ 연관성 체크 에러: {str(e)}")
-
-            traceback.print_exc()
-            # 에러 시 원본 그대로 반환
-            return state
+            raise
 
     @staticmethod
     async def generate_response_node(state: State) -> State:
@@ -409,10 +380,6 @@ class Nodes:
             logger.debug(f"🔀 타입: {search_type}")
             logger.debug(f"📚 문서: {len(documents)}개")
 
-            # LLM 모델
-            models = Models()
-            llm = models.get_response_model()
-
             # ========================================
             # Case 1: Direct Answer (검색 유도)
             # ========================================
@@ -425,10 +392,11 @@ class Nodes:
 
                 logger.debug(f"📄 프롬프트:\n{prompt}")
 
+                llm = Models().get_response_model()
                 response = await llm.ainvoke(prompt)
-                response_text = (
-                    response.content if hasattr(response, "content") else str(response)
-                )
+                response_text = str(response.text)
+                if not response_text.strip():
+                    raise ValueError("LLM 응답에 표시할 텍스트가 없습니다")
 
                 logger.debug(f"✅ 검색 유도 완료: {response_text}")
 
@@ -470,10 +438,11 @@ class Nodes:
 
             # LLM 호출
             logger.debug("🤖 LLM 호출 중...")
+            llm = Models().get_response_model()
             response = await llm.ainvoke(prompt)
-            response_text = (
-                response.content if hasattr(response, "content") else str(response)
-            )
+            response_text = str(response.text)
+            if not response_text.strip():
+                raise ValueError("LLM 응답에 표시할 텍스트가 없습니다")
 
             logger.debug(f"✅ 검색 결과 정리 완료")
             logger.debug(f"📤 응답 ({len(response_text)}자): {response_text}")
@@ -506,10 +475,7 @@ class Nodes:
 
                 return {**state, "response": fallback}
             else:
-                fallback = "검색 결과가 없습니다."
-                logger.warning(f"⚠️  폴백 응답: {fallback}")
-
-                return {**state, "response": fallback}
+                raise
 
     @staticmethod
     async def check_search_type(state: State) -> State:

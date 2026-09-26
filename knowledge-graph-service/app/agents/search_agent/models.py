@@ -1,8 +1,7 @@
-from langchain.chat_models import init_chat_model
+from app.services.gemini_chat_model import GeminiCloudChatModel
 from app.core.config import get_settings
 
 from app.schemas.agents import PreFilterOutput, RelevanceCheckOutput
-import os
 
 
 class Models:
@@ -16,29 +15,26 @@ class Models:
 
     def __init__(self):
         self.settings = get_settings()
-        os.environ["OPENAI_API_KEY"] = self.settings.openai_api_key
-        os.environ["OPENAI_API_BASE"] = self.settings.openai_base_url
+
+    def _model(self) -> GeminiCloudChatModel:
+        return GeminiCloudChatModel(
+            model=self.settings.search_agent_model,
+            vertexai=True,
+            project=self.settings.google_cloud_project,
+            location=self.settings.google_cloud_location,
+            thinking_level="low",
+        )
 
     def get_prefilter_model(self):
         """Pre-filter용 structured output 모델"""
-        model = init_chat_model(
-            model=self.settings.search_agent_model,
-            temperature=self.settings.search_agent_temperature,
-        )
+        model = self._model()
         return model.with_structured_output(PreFilterOutput)
 
     def get_relevance_check_model(self):
         """연관성 체크용 structured output 모델"""
-        model = init_chat_model(
-            model=self.settings.search_agent_model,
-            temperature=self.settings.search_agent_temperature,
-        )
+        model = self._model()
         return model.with_structured_output(RelevanceCheckOutput)
 
     def get_response_model(self):
         """응답 생성용 일반 모델"""
-        model = init_chat_model(
-            model=self.settings.search_agent_model,
-            temperature=self.settings.search_agent_temperature,
-        )
-        return model
+        return self._model()

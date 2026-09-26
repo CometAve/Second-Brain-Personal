@@ -30,7 +30,7 @@ class VectorConfig:
     """벡터 임베딩 관련 설정"""
 
     # === 임베딩 차원 ===
-    EMBEDDING_DIMENSION = 1536  # text-embedding-3-small 차원
+    EMBEDDING_DIMENSION = 1536  # gemini-embedding-2 출력 차원
 
     # === 벡터 인덱스 ===
     INDEX_NAME = "note_embeddings"  # Neo4j 벡터 인덱스명

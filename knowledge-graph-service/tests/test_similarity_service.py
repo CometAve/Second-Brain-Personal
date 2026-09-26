@@ -15,6 +15,8 @@ from app.crud import note as note_crud
 from app.services.similarity_service import similarity_service
 from app.core.constants import VectorConfig
 
+TEST_EMBEDDING_MODEL = "google-cloud/gemini-embedding-2/1536/prefix-v1"
+
 
 # 로깅 설정
 logging.basicConfig(
@@ -83,7 +85,8 @@ def test_find_similar_notes():
             note_id=note_id,
             user_id=test_user,
             title=f"유사도 테스트 노트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     print(f"✅ 노트 생성 완료: {len(note_ids)}개")
@@ -125,7 +128,8 @@ def test_create_similarity_relationships():
             note_id=note_id,
             user_id=test_user,
             title=f"관계 생성 테스트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     print(f"✅ 노트 생성 완료: {len(note_ids)}개")
@@ -173,7 +177,8 @@ def test_delete_similarity_relationships():
             note_id=note_id,
             user_id=test_user,
             title=f"삭제 테스트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 메인 노트 생성
@@ -182,7 +187,8 @@ def test_delete_similarity_relationships():
         note_id=main_note_id,
         user_id=test_user,
         title="메인 노트",
-        embedding=main_embedding
+        embedding=main_embedding,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     # 관계 생성
@@ -230,7 +236,8 @@ def test_get_related_notes_count():
             note_id=note_id,
             user_id=test_user,
             title=f"개수 테스트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 2. 관계 생성
@@ -273,7 +280,8 @@ def test_get_user_similarity_stats():
             note_id=note_id,
             user_id=test_user,
             title=f"통계 테스트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     print(f"✅ 노트 생성 완료: {len(note_ids)}개")
@@ -323,7 +331,8 @@ def test_user_isolation_similarity():
             note_id=note_id,
             user_id=user1,
             title=f"User1 노트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 2. User2가 노트 생성 (seed=7로 다르게)
@@ -338,7 +347,8 @@ def test_user_isolation_similarity():
             note_id=note_id,
             user_id=user2,
             title=f"User2 노트 {i}",
-            embedding=embedding
+            embedding=embedding,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 3. User1이 관계 생성

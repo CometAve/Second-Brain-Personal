@@ -283,6 +283,7 @@ class RabbitMQService:
             logger.error(f"❌ 메시지 수신 중 오류:")
             logger.error(f"   {type(e).__name__}: {e}")
             self.close()
+            raise
 
     def close(self) -> None:
         """

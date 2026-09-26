@@ -1,0 +1,36 @@
+# Opt in explicitly with -f compose.yaml -f compose.google-cloud.yaml.
+# The credentials stay on the host and are mounted read-only; never COPY into images.
+x-google-env: &google-env
+  GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:?Set the Google Cloud project}
+  GOOGLE_CLOUD_LOCATION: ${GOOGLE_CLOUD_LOCATION:-global}
+  GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-adc.json
+  GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-2}
+  RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-note_creation_queue_gemini}
+
+x-google-adc: &google-adc
+  type: bind
+  source: ${GOOGLE_APPLICATION_CREDENTIALS:?Set the absolute host ADC file path}
+  target: /run/secrets/google-adc.json
+  read_only: true
+  bind:
+    create_host_path: false
+
+services:
+  backend:
+    environment:
+      <<: *google-env
+      GOOGLE_CLOUD_API_BASE_URL: https://aiplatform.googleapis.com
+      GEMINI_GENERATION_MODEL: ${GEMINI_GENERATION_MODEL:-gemini-3.8-flash}
+    volumes: [*google-adc]
+  ai:
+    environment:
+      <<: *google-env
+      SUMMARIZE_MODEL: ${SUMMARIZE_MODEL:-gemini-3.8-flash}
+      SEARCH_AGENT_MODEL: ${SEARCH_AGENT_MODEL:-gemini-3.7-flash}
+    volumes: [*google-adc]
+  worker:
+    environment:
+      <<: *google-env
+      SUMMARIZE_MODEL: ${SUMMARIZE_MODEL:-gemini-3.8-flash}
+      SEARCH_AGENT_MODEL: ${SEARCH_AGENT_MODEL:-gemini-3.7-flash}
+    volumes: [*google-adc]

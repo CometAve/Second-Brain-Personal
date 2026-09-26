@@ -1,19 +1,12 @@
 package uknowklp.secondbrain.api.gms.service;
 
 import java.time.Duration;
-import java.util.List;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
-import uknowklp.secondbrain.api.gms.dto.GmsMessage;
-import uknowklp.secondbrain.api.gms.dto.GmsRequest;
-import uknowklp.secondbrain.api.gms.dto.GmsResponse;
 import uknowklp.secondbrain.api.note.domain.Note;
 
 @Slf4j
@@ -21,47 +14,27 @@ import uknowklp.secondbrain.api.note.domain.Note;
 @RequiredArgsConstructor
 public class GmsQuestionService {
 
-	private final WebClient gmsWebClient;
-
-	@Value("${gms.model}")
-	private String model;
-
-	@Value("${gms.max-tokens}")
-	private Integer maxTokens;
-
-	@Value("${gms.temperature}")
-	private Double temperature;
+	private final GeminiClient geminiClient;
 
 	// 리마인더 질문 비동기로 생성
 	public Mono<String> makeReminderQuestion(Note note) {
 		String prompt = createReminderPrompt(note);
 
-		GmsRequest request = new GmsRequest(
-			model,
-			maxTokens,
-			temperature,
-			List.of(GmsMessage.user(prompt))
-		);
-
-		return gmsWebClient.post()
-			.uri("/messages")
-			.bodyValue(request)
-			.retrieve()
-			.bodyToMono(GmsResponse.class)
-			.map(GmsResponse::extractText)
+		return geminiClient.generate(prompt)
+			.map(GeminiClient.GenerationResponse::extractText)
 			.retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
 				.maxBackoff(Duration.ofSeconds(5))
 				.doBeforeRetry(signal ->
-					log.warn("GMS API 재시도 - noteId: {}, 시도: {}/3",
+					log.warn("Gemini API 재시도 - noteId: {}, 시도: {}/3",
 						note.getId(), signal.totalRetries() + 1)
 				)
 			)
 			.onErrorResume(e -> {
-				log.error("GMS API 실패 (비상용 질문 사용) - noteId: {}", note.getId(), e);
+				log.error("Gemini API 실패 (비상용 질문 사용) - noteId: {}", note.getId(), e);
 				return Mono.just(createFallbackQuestion(note));
 			})
 			.doOnSuccess(question ->
-				log.debug("GMS 질문 생성 성공 - noteId: {}, 길이: {}",
+				log.debug("Gemini 질문 생성 완료 - noteId: {}, 길이: {}",
 					note.getId(), question.length())
 			);
 	}
@@ -89,7 +62,7 @@ public class GmsQuestionService {
 		);
 	}
 
-	// GMS 실패 시 진행할 비상용 질문
+	// Gemini 실패 시 사용할 비상용 질문
 	private String createFallbackQuestion(Note note) {
 		return String.format("'%s' 노트의 핵심 내용을 기억하시나요?", note.getTitle());
 	}

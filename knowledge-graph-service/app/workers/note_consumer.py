@@ -6,7 +6,7 @@
 메시지 플로우:
 1. Spring Boot → RabbitMQ (메시지 발행)
 2. RabbitMQ → 워커 (메시지 수신)
-3. 워커 → OpenAI API (임베딩 생성)
+3. 워커 → Google Cloud Gemini (임베딩 생성)
 4. 워커 → Neo4j (노트 저장 및 관계 생성)
 
 처리 이벤트:
@@ -20,6 +20,7 @@ import logging
 from typing import Optional
 
 from app.services.rabbitmq_service import rabbitmq_service
+from app.core.config import get_settings
 from app.services.embedding_service import embedding_service
 from app.services.similarity_service import similarity_service
 from app.crud import note as note_crud
@@ -60,9 +61,7 @@ def process_note_created(
     }
 
     에러 처리:
-    - 임베딩 생성 실패: nack + requeue
-    - Neo4j 저장 실패: nack + requeue
-    - 유사도 연결 실패: 경고만 기록 (ack)
+    - 임베딩/Neo4j 실패: nack + requeue, 소비자 중지
     """
     try:
         logger.debug(f"이벤트 수신")
@@ -71,7 +70,9 @@ def process_note_created(
         event = NoteCreatedEvent(**event_data)
         logger.debug(f"파싱 완료")
         # 2. 임베딩 생성
-        embedding, token_count = embedding_service.generate_embedding(event.content)
+        embedding, token_count = embedding_service.generate_embedding(
+            event.content, title=event.title
+        )
 
         if not embedding:
             raise Exception("임베딩 생성 실패")
@@ -83,20 +84,17 @@ def process_note_created(
             note_id=event.note_id,
             title=event.title,
             embedding=embedding,
+            embedding_model=embedding_service.model_tag,
         )
         logger.debug("노트 저장 완료")
 
         # 4. 유사도 기반 관계 생성
-        try:
-            relationships = similarity_service.create_similarity_relationships(
-                user_id=event.user_id,
-                note_id=event.note_id,
-                embedding=embedding,
-            )
-            logger.debug(f"유사도 관계 형성 완료 : {relationships}개")
-        except Exception as e:
-            logger.warning(f" 유사도 관계 생성 실패(유사한 노트가 없거나, 오류)")
-            logger.warning(f"e : {e}")
+        relationships = similarity_service.create_similarity_relationships(
+            user_id=event.user_id,
+            note_id=event.note_id,
+            embedding=embedding,
+        )
+        logger.debug(f"유사도 관계 형성 완료 : {relationships}개")
 
         # 5. 메시지 확인
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -104,7 +102,7 @@ def process_note_created(
 
     except Exception as e:
         logger.error(f"❌ 노트 생성 처리 실패 - {e}")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        raise
 
 
 def process_note_updated(
@@ -144,41 +142,45 @@ def process_note_updated(
         logger.debug(f"파싱 완료")
         # 2. 임베딩 재생성(content 변경사항이 있을 때)
         new_embedding: Optional[list] = None
-        if event.content:
-            new_embedding, token_count = embedding_service.generate_embedding(event.content)
+        if event.content is not None:
+            current_note = note_crud.get_note(event.user_id, event.note_id)
+            if current_note is None:
+                raise ValueError("임베딩을 갱신할 노트를 찾을 수 없습니다")
+            new_embedding, token_count = embedding_service.generate_embedding(
+                event.content, title=event.title or current_note["title"]
+            )
             if not new_embedding:
                 raise Exception("임베딩 생성 실패")
             logger.debug(f"임베딩 생성 완료")
         # 3. Neo4j 업데이트
-        note_crud.update_note(
+        updated = note_crud.update_note(
             user_id=event.user_id,
             note_id=event.note_id,
             title=event.title,
             embedding=new_embedding,
+            embedding_model=embedding_service.model_tag if new_embedding is not None else None,
         )
+        if not updated:
+            raise ValueError("갱신할 노트를 찾을 수 없습니다")
 
         # 4. 관계 업데이트(content 변경사항이 있을 때)
-        if event.content:
+        if event.content is not None:
             note_crud.delete_relationships(event.user_id, event.note_id)
             logger.debug(f"기존 관계 제거 완료")
 
-            try:
-                relationships = similarity_service.create_similarity_relationships(
-                    user_id=event.user_id,
-                    note_id=event.note_id,
-                    embedding=new_embedding,
-                )
-                logger.debug(f"유사도 관계 형성 완료 : {relationships}개")
-            except Exception as e:
-                logger.warning(f" 유사도 관계 생성 실패(유사한 노트가 없거나, 오류)")
-                logger.warning(f"e : {e}")
+            relationships = similarity_service.create_similarity_relationships(
+                user_id=event.user_id,
+                note_id=event.note_id,
+                embedding=new_embedding,
+            )
+            logger.debug(f"유사도 관계 형성 완료 : {relationships}개")
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
         logger.debug("수정 메시지 처리 완료")
 
     except Exception as e:
         logger.error(f"❌ 노트 수정 처리 실패 - {e}")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        raise
 
 
 
@@ -225,7 +227,7 @@ def process_note_deleted(
 
     except Exception as e:
         logger.error(f"❌ 노트 삭제 처리 실패 - {e}")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        raise
 
 
 
@@ -257,12 +259,13 @@ def message_router(
         elif event_type == EventType.NOTE_DELETED.value:
             process_note_deleted(ch, method, properties, body)
         else:
-            logger.error(f"❌ 알 수 없는 이벤트 타입: {event_type}")
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            raise ValueError(f"알 수 없는 이벤트 타입: {event_type}")
 
     except Exception as e:
         logger.error(f"❌ 메시지 라우팅 실패: {e}")
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+        ch.stop_consuming()
+        raise
 
 
 def start_consumer():
@@ -295,14 +298,14 @@ def start_consumer():
         # 2. Exchange, Queue, Binding 선언
         if not rabbitmq_service.declare_exchange_and_queue(
             exchange_name="knowledge_graph_events",
-            queue_name="note_creation_queue",
+            queue_name=get_settings().rabbitmq_queue,
             routing_key="note.*",
         ):
             raise Exception("Exchange/Queue 선언 실패")
         logger.debug("Exchange/Queue 선언 성공")
 
         rabbitmq_service.consume_messages(
-            queue_name="note_creation_queue",
+            queue_name=get_settings().rabbitmq_queue,
             callback=message_router,
         )
     except KeyboardInterrupt:
@@ -311,6 +314,7 @@ def start_consumer():
     except Exception as e:
         logger.error(f"❌ 워커 종료 중 오류 발생: {e}")
         rabbitmq_service.close()
+        raise
 
 if __name__ == "__main__":
     start_consumer()

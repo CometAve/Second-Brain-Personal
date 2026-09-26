@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -11,10 +10,10 @@ class Settings(BaseSettings):
     neo4j_user: str
     neo4j_password: str
 
-    # OpenAI 설정
-    openai_api_key: str
-    openai_base_url: Optional[str] = None
-    openai_model: str
+    # Google Cloud Vertex AI 설정. ADC는 SDK가 기본 자격증명에서 읽는다.
+    google_cloud_project: str
+    google_cloud_location: str = "global"
+    gemini_embedding_model: str = "gemini-embedding-2"
 
     # RabbitMQ 설정
     rabbitmq_host: str
@@ -22,6 +21,7 @@ class Settings(BaseSettings):
     rabbitmq_user: str
     rabbitmq_password: str
     rabbitmq_vhost: str
+    rabbitmq_queue: str = "note_creation_queue"
 
     @property
     def rabbitmq_url(self) -> str:
@@ -36,12 +36,10 @@ class Settings(BaseSettings):
     max_relationships: int
 
     # Summarize_Agent 설정
-    summarize_model: str
-    summarize_temperature: float
+    summarize_model: str = "gemini-3.8-flash"
 
     # Search_Agent 설정
-    search_agent_model: str
-    search_agent_temperature: float
+    search_agent_model: str = "gemini-3.7-flash"
     top_k: int
     search_limit: int
 

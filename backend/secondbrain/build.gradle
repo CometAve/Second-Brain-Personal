@@ -97,11 +97,8 @@ dependencies {
 	// 환경변수
 	implementation 'me.paulschwarz:spring-dotenv:5.1.0'
 
-	// OpenAI Java SDK (FastAPI와 동일한 방식)
-	implementation('com.openai:openai-java:4.69.0') {
-		// springdoc의 최신 Jakarta annotations와 동일 클래스를 제공하는 구 버전을 제외합니다.
-		exclude group: 'io.swagger.core.v3', module: 'swagger-annotations'
-	}
+	// Vertex AI REST 호출에 사용하는 Application Default Credentials
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.50.0'
 
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	compileOnly 'org.projectlombok:lombok'

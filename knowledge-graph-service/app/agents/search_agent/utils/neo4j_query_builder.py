@@ -51,6 +51,7 @@ def build_time_filter_cypher(
 
 def build_similarity_search_cypher(
     embedding: List[float],
+    embedding_model: str,
     user_id: int,
     timespan: Optional[Dict[str, str]] = None,
     limit: int = 10,
@@ -70,6 +71,7 @@ def build_similarity_search_cypher(
     
     params = {
         "embedding": embedding,
+        "embedding_model": embedding_model,
         "user_id": user_id,
         "limit": limit
     }
@@ -78,6 +80,7 @@ def build_similarity_search_cypher(
     // 1. user_id + 시간 필터 (인덱스 활용)
     MATCH (n:Note)
     WHERE n.user_id = $user_id
+      AND n.embedding_model = $embedding_model
     """
     
     # 시간 필터 추가
