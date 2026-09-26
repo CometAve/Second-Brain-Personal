@@ -16,6 +16,7 @@ logging.basicConfig(
 )
 
 # 테스트용 상수
+TEST_EMBEDDING_MODEL = "google-cloud/gemini-embedding-2/1536/prefix-v1"
 TEST_USER_ID = "test-user-123"
 
 # 더미 임베딩 (1536차원)
@@ -39,7 +40,8 @@ def test_create_note():
         note_id=test_note_id,
         user_id=TEST_USER_ID,
         title="Neo4j 기초",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     assert note_id == test_note_id
@@ -60,7 +62,8 @@ def test_get_note():
         note_id=test_note_id,
         user_id=TEST_USER_ID,
         title="Neo4j 기초",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     # 조회
@@ -91,7 +94,8 @@ def test_get_all_notes():
             note_id=generate_test_id(f"note-{i}"),  # 👈 각각 고유 ID
             user_id=test_user,
             title=f"노트 제목 {i}",
-            embedding=DUMMY_EMBEDDING
+            embedding=DUMMY_EMBEDDING,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 목록 조회
@@ -125,7 +129,8 @@ def test_pagination():
             note_id=generate_test_id(f"pagination-{i}"),
             user_id=test_user,
             title=f"페이지네이션 테스트 {i}",
-            embedding=DUMMY_EMBEDDING
+            embedding=DUMMY_EMBEDDING,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     # 첫 페이지 (limit=2, skip=0)
@@ -169,7 +174,8 @@ def test_search_by_title():
         note_id=generate_test_id("search-note"),
         user_id=test_user,
         title="Neo4j 검색 테스트",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     # 검색
@@ -197,7 +203,8 @@ def test_count_user_notes():
             note_id=generate_test_id(f"count-{i}"),
             user_id=test_user,
             title=f"카운트 테스트 {i}",
-            embedding=DUMMY_EMBEDDING
+            embedding=DUMMY_EMBEDDING,
+            embedding_model=TEST_EMBEDDING_MODEL,
         )
     
     count = note_crud.count_user_notes(user_id=test_user)
@@ -218,7 +225,8 @@ def test_get_stats():
         note_id=generate_test_id("stats-note"),
         user_id=test_user,
         title="통계 테스트",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     stats = note_crud.get_stats(user_id=test_user)
@@ -245,7 +253,8 @@ def test_delete_note():
         note_id=test_id,
         user_id=test_user,
         title="삭제할 노트",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     # 존재 확인
@@ -279,7 +288,8 @@ def test_user_isolation():
         note_id=note_id,
         user_id=user1,
         title="User1의 노트",
-        embedding=DUMMY_EMBEDDING
+        embedding=DUMMY_EMBEDDING,
+        embedding_model=TEST_EMBEDDING_MODEL,
     )
     
     # user1 노트 조회 (성공해야 함)

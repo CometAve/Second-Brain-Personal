@@ -1,6 +1,7 @@
 from app.db.neo4j_client import neo4j_client
 from app.core.config import get_settings
 from app.core.constants import NoteConfig, VectorConfig, ErrorConfig
+from app.services.embedding_service import embedding_service
 from typing import List, Dict
 import logging
 
@@ -70,6 +71,7 @@ class SimilarityService:
         CALL db.index.vector.queryNodes('{self.vector_index_name}', $vector_limit, $embedding)
         YIELD node AS similar_note, score
         WHERE similar_note.user_id = $user_id
+          AND similar_note.embedding_model = $embedding_model
           AND similar_note.note_id <> $note_id
           AND score >= $threshold
         RETURN similar_note.note_id AS note_id,
@@ -88,6 +90,7 @@ class SimilarityService:
                         "user_id": user_id,
                         "note_id": note_id,
                         "embedding": embedding,
+                        "embedding_model": embedding_service.model_tag,
                         "vector_limit": self.vector_search_limit,  # 벡터 인덱스에서 먼저 max개 추출
                         "limit": limit,  # 그 중에서 limit개만 반환
                         "threshold": self.similarity_threshold,
@@ -149,7 +152,8 @@ class SimilarityService:
                 query = """
                 MATCH (n:Note {note_id: $note_id, user_id: $user_id})
                 MATCH (similar:Note {note_id: $similar_note_id, user_id: $user_id})
-                MERGE (n)-[r:SIMILAR_TO {score: $score}]-(similar)
+                MERGE (n)-[r:SIMILAR_TO]-(similar)
+                SET r.score = $score
                 RETURN count(r) AS created
                 """
 
@@ -169,10 +173,13 @@ class SimilarityService:
                         count += 1
 
             except Exception as e:
-                logger.warning(
-                    f"⚠️  관계 생성 실패: {note_id} → {similar_note['note_id']}: {e}"
+                logger.error(
+                    "관계 생성 실패: %s → %s: %s",
+                    note_id,
+                    similar_note["note_id"],
+                    e,
                 )
-                continue
+                raise
 
         if NoteConfig.ENABLE_QUERY_LOGGING:
             logger.debug(f"✅ 관계 생성: {user_id} - {note_id} - {count}개 관계")

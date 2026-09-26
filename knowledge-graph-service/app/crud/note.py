@@ -28,6 +28,7 @@ def create_note(
     user_id: int,
     title: str,
     embedding: List[float],
+    embedding_model: str,
 ) -> int:
     """
     노트 생성 (note_id, user_id는 Spring Boot에서 제공)
@@ -42,14 +43,12 @@ def create_note(
         생성된 노트 ID (입력받은 것 그대로)
     """
     query = """
-    CREATE (n:Note {
-        note_id: $note_id,
-        user_id: $user_id,
-        title: $title,
-        embedding: $embedding,
-        created_at: datetime(),
-        updated_at: datetime()
-    })
+    MERGE (n:Note {note_id: $note_id, user_id: $user_id})
+    ON CREATE SET n.created_at = datetime()
+    SET n.title = $title,
+        n.embedding = $embedding,
+        n.embedding_model = $embedding_model,
+        n.updated_at = datetime()
     RETURN n.note_id AS note_id
     """
 
@@ -61,6 +60,7 @@ def create_note(
                 "user_id": user_id,
                 "title": title,
                 "embedding": embedding,
+                "embedding_model": embedding_model,
             },
         )
 
@@ -397,6 +397,7 @@ def update_note(
     note_id: int,
     title: Optional[str] = None,
     embedding: Optional[List[float]] = None,
+    embedding_model: Optional[str] = None,
 ) -> bool:
     """
     노트 수정 (제목 또는 임베딩)
@@ -422,8 +423,12 @@ def update_note(
         params["title"] = title
     
     if embedding is not None:
+        if not embedding_model:
+            raise ValueError("embedding_model is required when updating an embedding")
         set_clauses.append("n.embedding = $embedding")
         params["embedding"] = embedding
+        set_clauses.append("n.embedding_model = $embedding_model")
+        params["embedding_model"] = embedding_model
     
     query = f"""
     MATCH (n:Note {{note_id: $note_id, user_id: $user_id}})

@@ -54,7 +54,9 @@ async def create_note(
 
         # 1. 임베딩 생성
         logger.debug("🤖 임베딩 생성 중...")
-        embedding, token_count = embedding_service.generate_embedding(note.content)
+        embedding, token_count = embedding_service.generate_embedding(
+            note.content, title=note.title
+        )
 
         logger.debug(f"   ✅ 임베딩 생성 완료: {len(embedding)}차원, {token_count}토큰")
 
@@ -65,6 +67,7 @@ async def create_note(
             user_id=user_id,
             title=note.title,
             embedding=embedding,
+            embedding_model=embedding_service.model_tag,
         )
 
         logger.debug(f"   ✅ 노트 저장 완료: {note_id}")
