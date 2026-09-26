@@ -65,7 +65,7 @@ export function Graph({ onReady }: GraphProps) {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [activeNodeId, setActiveNodeId] = useState<number | null>(null);
   const [scene, setScene] = useState<ActiveScene | null>(null);
-  const [forcesReady, setForcesReady] = useState(false);
+  const [forcesReadyScene, setForcesReadyScene] = useState<ActiveScene | null>(null);
   const isGraphReady = container !== null && size.width > 0 && size.height > 0;
 
   const graphData = useMemo(
@@ -92,6 +92,7 @@ export function Graph({ onReady }: GraphProps) {
   const activeNode = graphData?.nodes.find((node) => node.id === activeNodeId);
   const currentScene = scene?.sessionEpoch === sessionEpoch ? scene : null;
   const rendererData = currentScene?.data;
+  const forcesReady = forcesReadyScene === currentScene;
   const noCanvasOutcome =
     (savedNodesQuery.isError && (!graphData || graphData.nodes.length === 0)) ||
     graphData?.nodes.length === 0;
@@ -128,40 +129,45 @@ export function Graph({ onReady }: GraphProps) {
   }, [container]);
 
   useEffect(() => {
-    if (!nextRendererData || nextRendererData.nodes.length === 0) {
-      fittedSessionRef.current = null;
-      fitDistanceRef.current = null;
-      setForcesReady(false);
-      return;
-    }
-    // A data refresh may add links while the user is looking at the graph.
-    // Keep the established positions of unchanged notes instead of restarting
-    // every node at a new random position. D3 owns these mutable copies only.
-    const previousScene = activeSceneRef.current;
-    if (previousScene?.sessionEpoch === sessionEpoch) {
-      const previousNodes = new Map(previousScene.data.nodes.map((node) => [node.id, node]));
-      if (!nextRendererData.nodes.some((node) => previousNodes.has(node.id))) {
-        fittedSessionRef.current = null;
-        fitDistanceRef.current = null;
+    if (nextRendererData?.nodes.length) return;
+    fittedSessionRef.current = null;
+    fitDistanceRef.current = null;
+  }, [nextRendererData]);
+
+  const attachContainer = useCallback(
+    (node: HTMLDivElement | null) => {
+      setContainer(node);
+      if (!node || !nextRendererData || nextRendererData.nodes.length === 0) return;
+      // A data refresh may add links while the user is looking at the graph.
+      // Keep the established positions of unchanged notes instead of restarting
+      // every node at a new random position. D3 owns these mutable copies only.
+      const previousScene = activeSceneRef.current;
+      if (previousScene?.sessionEpoch === sessionEpoch) {
+        const previousNodes = new Map(previousScene.data.nodes.map((node) => [node.id, node]));
+        if (!nextRendererData.nodes.some((node) => previousNodes.has(node.id))) {
+          fittedSessionRef.current = null;
+          fitDistanceRef.current = null;
+        }
+        for (const node of nextRendererData.nodes) {
+          const previous = previousNodes.get(node.id);
+          if (previous?.x !== undefined && Number.isFinite(previous.x)) node.x = previous.x;
+          if (previous?.y !== undefined && Number.isFinite(previous.y)) node.y = previous.y;
+          if (previous?.z !== undefined && Number.isFinite(previous.z)) node.z = previous.z;
+        }
       }
-      for (const node of nextRendererData.nodes) {
-        const previous = previousNodes.get(node.id);
-        if (previous?.x !== undefined && Number.isFinite(previous.x)) node.x = previous.x;
-        if (previous?.y !== undefined && Number.isFinite(previous.y)) node.y = previous.y;
-        if (previous?.z !== undefined && Number.isFinite(previous.z)) node.z = previous.z;
-      }
-    }
-    const visuals = createGraphScene(
-      nextRendererData.nodes,
-      nextRendererData.links,
-      previousScene?.visuals.labelRenderer,
-    );
-    engineSettledRef.current = false;
-    const nextScene = { sessionEpoch, data: nextRendererData, visuals };
-    activeSceneRef.current = nextScene;
-    setScene(nextScene);
-    return () => visuals.dispose();
-  }, [nextRendererData, sessionEpoch]);
+      const visuals = createGraphScene(
+        nextRendererData.nodes,
+        nextRendererData.links,
+        previousScene?.visuals.labelRenderer,
+      );
+      engineSettledRef.current = false;
+      const nextScene = { sessionEpoch, data: nextRendererData, visuals };
+      activeSceneRef.current = nextScene;
+      setScene(nextScene);
+      return () => visuals.dispose();
+    },
+    [nextRendererData, sessionEpoch],
+  );
 
   useEffect(
     () => () => {
@@ -170,16 +176,19 @@ export function Graph({ onReady }: GraphProps) {
     [],
   );
 
-  useEffect(() => {
-    const fg = fgRef.current;
-    if (!isGraphReady || !fg || !currentScene || forcesReady) return;
-    const linkForce = fg.d3Force('link') as { distance: (distance: number) => void } | undefined;
-    linkForce?.distance(90);
-    const chargeForce = fg.d3Force('charge') as
-      { strength: (strength: number) => void } | undefined;
-    chargeForce?.strength(-185);
-    setForcesReady(true);
-  }, [currentScene, forcesReady, isGraphReady]);
+  const attachGraphHost = useCallback(
+    (host: HTMLDivElement | null) => {
+      const fg = fgRef.current;
+      if (!host || !fg || !currentScene) return;
+      const linkForce = fg.d3Force('link') as { distance: (distance: number) => void } | undefined;
+      linkForce?.distance(90);
+      const chargeForce = fg.d3Force('charge') as
+        { strength: (strength: number) => void } | undefined;
+      chargeForce?.strength(-185);
+      setForcesReadyScene(currentScene);
+    },
+    [currentScene],
+  );
 
   const stopIdleTimer = useCallback(() => {
     if (idleTimerRef.current !== null) clearTimeout(idleTimerRef.current);
@@ -319,7 +328,7 @@ export function Graph({ onReady }: GraphProps) {
 
   return (
     <div
-      ref={setContainer}
+      ref={attachContainer}
       className="relative size-full min-h-0 overflow-hidden bg-[#10151f] text-[#eef1f6]"
       onPointerMove={resumeForInteraction}
       onPointerDown={resumeForInteraction}
@@ -327,33 +336,35 @@ export function Graph({ onReady }: GraphProps) {
     >
       <div className="pointer-events-none absolute inset-0 z-1 bg-[radial-gradient(circle_at_52%_44%,rgba(101,99,153,0.10),transparent_48%)]" />
       {isGraphReady && currentScene && rendererData && (
-        <ForceGraph3D
-          ref={fgRef}
-          width={size.width}
-          height={size.height}
-          graphData={forcesReady ? rendererData : EMPTY_RENDERER_DATA}
-          extraRenderers={[currentScene.visuals.labelRenderer]}
-          nodeLabel={(node) => node.title.trim() || '제목 없는 노트'}
-          nodeThreeObject={currentScene.visuals.getNodeObject}
-          linkWidth={linkWidth}
-          linkColor={linkColor}
-          linkOpacity={0.48}
-          linkDirectionalParticles={0}
-          backgroundColor="#10151f"
-          onNodeHover={(node) => {
-            if (node) setActiveNodeId(node.id);
-          }}
-          onNodeClick={(node) => openNote(node.id)}
-          onBackgroundClick={() => setActiveNodeId(null)}
-          onEngineTick={handleEngineTick}
-          onEngineStop={handleEngineStop}
-          enableNodeDrag={false}
-          showNavInfo={false}
-          d3AlphaDecay={0.05}
-          d3VelocityDecay={0.5}
-          warmupTicks={INITIAL_LAYOUT_TICKS}
-          cooldownTime={5000}
-        />
+        <div ref={attachGraphHost}>
+          <ForceGraph3D
+            ref={fgRef}
+            width={size.width}
+            height={size.height}
+            graphData={forcesReady ? rendererData : EMPTY_RENDERER_DATA}
+            extraRenderers={[currentScene.visuals.labelRenderer]}
+            nodeLabel={(node) => node.title.trim() || '제목 없는 노트'}
+            nodeThreeObject={currentScene.visuals.getNodeObject}
+            linkWidth={linkWidth}
+            linkColor={linkColor}
+            linkOpacity={0.48}
+            linkDirectionalParticles={0}
+            backgroundColor="#10151f"
+            onNodeHover={(node) => {
+              if (node) setActiveNodeId(node.id);
+            }}
+            onNodeClick={(node) => openNote(node.id)}
+            onBackgroundClick={() => setActiveNodeId(null)}
+            onEngineTick={handleEngineTick}
+            onEngineStop={handleEngineStop}
+            enableNodeDrag={false}
+            showNavInfo={false}
+            d3AlphaDecay={0.05}
+            d3VelocityDecay={0.5}
+            warmupTicks={INITIAL_LAYOUT_TICKS}
+            cooldownTime={5000}
+          />
+        </div>
       )}
       <section
         aria-label="지식 지도 정보"

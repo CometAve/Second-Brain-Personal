@@ -1,4 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
+
+interface ManualWidth {
+  width: number;
+  viewportWidth: number;
+  breakpoints: Record<number, number>;
+  defaultWidth: number;
+}
+
+function getViewportWidth() {
+  return window.innerWidth;
+}
+
+function getServerViewportWidth() {
+  return 0;
+}
+
+function sameBreakpoints(left: Record<number, number>, right: Record<number, number>) {
+  const keys = Object.keys(left);
+  return (
+    keys.length === Object.keys(right).length &&
+    keys.every((key) => left[Number(key)] === right[Number(key)])
+  );
+}
+
+function getBreakpointWidth(
+  viewportWidth: number,
+  breakpoints: Record<number, number>,
+  defaultWidth: number,
+) {
+  const sortedBreakpoints = Object.keys(breakpoints)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+  for (const breakpoint of sortedBreakpoints) {
+    if (viewportWidth >= breakpoint) return breakpoints[breakpoint];
+  }
+  return defaultWidth;
+}
 
 interface UseResponsiveWidthOptions {
   /**
@@ -71,38 +109,47 @@ export function useResponsiveWidth({
   breakpoints,
   defaultWidth = 50,
 }: UseResponsiveWidthOptions): UseResponsiveWidthReturn {
-  const [width, setWidth] = useState(defaultWidth);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      const windowWidth = window.innerWidth;
-
-      // 브레이크포인트를 내림차순으로 정렬
-      const sortedBreakpoints = Object.keys(breakpoints)
-        .map(Number)
-        .sort((a, b) => b - a);
-
-      // 현재 창 크기에 맞는 브레이크포인트 찾기
-      for (const breakpoint of sortedBreakpoints) {
-        if (windowWidth >= breakpoint) {
-          setWidth(breakpoints[breakpoint]);
-          return;
-        }
-      }
-
-      // 브레이크포인트를 찾지 못하면 기본값 사용
-      setWidth(defaultWidth);
+  const [manualWidth, setManualWidth] = useState<ManualWidth | null>(null);
+  const subscribeToWindowResize = useCallback((onResize: () => void) => {
+    const handleResize = () => {
+      setManualWidth(null);
+      onResize();
     };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  const viewportWidth = useSyncExternalStore(
+    subscribeToWindowResize,
+    getViewportWidth,
+    getServerViewportWidth,
+  );
+  const breakpointWidth = getBreakpointWidth(viewportWidth, breakpoints, defaultWidth);
+  const manualWidthIsCurrent =
+    manualWidth?.viewportWidth === viewportWidth &&
+    manualWidth.defaultWidth === defaultWidth &&
+    sameBreakpoints(manualWidth.breakpoints, breakpoints);
+  if (manualWidth && !manualWidthIsCurrent) setManualWidth(null);
+  const width = manualWidthIsCurrent ? manualWidth.width : breakpointWidth;
 
-    // 초기 실행
-    updateWidth();
-
-    // resize 이벤트 리스너 등록
-    window.addEventListener('resize', updateWidth);
-
-    // cleanup
-    return () => window.removeEventListener('resize', updateWidth);
-  }, [breakpoints, defaultWidth]);
+  const setWidth = useCallback<React.Dispatch<React.SetStateAction<number>>>(
+    (nextWidth) => {
+      setManualWidth((previous) => {
+        const previousWidth =
+          previous?.viewportWidth === viewportWidth &&
+          previous.defaultWidth === defaultWidth &&
+          sameBreakpoints(previous.breakpoints, breakpoints)
+            ? previous.width
+            : breakpointWidth;
+        return {
+          width: typeof nextWidth === 'function' ? nextWidth(previousWidth) : nextWidth,
+          viewportWidth,
+          breakpoints: { ...breakpoints },
+          defaultWidth,
+        };
+      });
+    },
+    [viewportWidth, breakpoints, defaultWidth, breakpointWidth],
+  );
 
   return { width, setWidth };
 }
