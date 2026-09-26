@@ -1,6 +1,6 @@
 # Docker Desktop 로컬 개발
 
-프론트엔드는 호스트에서 실행하고 데이터 서비스·백엔드·AI는 필요할 때만 컨테이너로 실행합니다. 저장소 루트의 `compose.yaml`이 유일한 실행 구성입니다. 기존 `Deploy/`, 프론트 Dockerfile과 중복 개발 Compose는 제거했습니다.
+프론트엔드는 호스트에서 실행하고 데이터 서비스·백엔드·AI는 필요할 때만 컨테이너로 실행합니다. 저장소 루트의 `compose.yaml`을 기본 구성으로 사용하고, Google Cloud AI 호출은 `compose.google-cloud.yaml`을 추가합니다. 기존 `Deploy/`, 프론트 Dockerfile과 중복 개발 Compose는 제거했습니다.
 
 ## 통합한 실행 기준
 
@@ -14,17 +14,17 @@ Docker Desktop을 실행하고 저장소 루트에서 다음을 실행합니다.
 cp infra/local/.env.example infra/local/.env
 ```
 
-이미 존재하는 `.env`는 덮어쓰지 말고 필요한 항목만 추가합니다. `infra/local/.env`는 Git에서 제외됩니다. 실제 외부 서비스 키를 넣지 않아도 데이터 서비스와 앱의 health 확인이 가능하도록 구성했습니다. 이 상태에서는 Google 로그인·AI 생성·S3 업로드·Clova TTS를 사용할 수 없습니다. 기본 LLM 주소는 외부 요청이 발생하지 않는 루프백 주소입니다.
+이미 존재하는 `.env`는 덮어쓰지 말고 필요한 항목만 추가합니다. `infra/local/.env`는 Git에서 제외됩니다. 실제 외부 서비스 키를 넣지 않아도 데이터 서비스와 앱의 health 확인이 가능하도록 구성했습니다. 이 상태에서는 Google 로그인·AI 생성·S3 업로드·Clova TTS를 사용할 수 없습니다. Gemini 사용에는 프로젝트와 ADC가 필요합니다. [Google Cloud 연결 및 기존 큐 전환](google-cloud.md)을 먼저 확인하세요. 별도 Cloud 파일을 명시적으로 적용해야 컨테이너가 인증 파일을 읽습니다.
 
 ## 필요한 프로필만 실행
 
 | 프로필 | 실행 서비스 | 메모리 상한 합계 |
 | --- | --- | --- |
-| `data` | PostgreSQL, Redis, Elasticsearch, RabbitMQ, Neo4j | 2,304 MiB |
-| `backend` | data + Spring 백엔드 | 3,072 MiB |
+| `data` | PostgreSQL, Redis, Elasticsearch, RabbitMQ, Neo4j | 2,432 MiB |
+| `backend` | data + Spring 백엔드 | 3,200 MiB |
 | `ai` | Neo4j, AI API | 1,280 MiB |
-| `worker` | backend + AI 워커 | 3,584 MiB |
-| `full` | 모든 데이터 서비스 + 백엔드 + AI API + 워커 | 4,096 MiB |
+| `worker` | backend + AI 워커 | 3,712 MiB |
+| `full` | 모든 데이터 서비스 + 백엔드 + AI API + 워커 | 4,224 MiB |
 
 프로필을 지정하지 않은 일괄 실행은 서비스를 자동으로 켜지 않습니다. 특정 서비스만 지정하면 해당 서비스와 선언된 의존성만 실행됩니다.
 
@@ -38,8 +38,9 @@ docker compose --env-file infra/local/.env --profile backend up -d --build --wai
 # 그래프·AI API 개발용. 백엔드 연동 기능은 backend 프로필도 필요
 docker compose --env-file infra/local/.env --profile ai up -d --build --wait
 
-# 전체 연동: 실제 AI 자격증명을 설정한 뒤 사용
-docker compose --env-file infra/local/.env --profile full up -d --build --wait
+# Cloud 전체 연동: 인증과 기존 큐 전환 준비 후 사용
+docker compose --env-file infra/local/.env --env-file infra/local/google-cloud.env \
+  -f compose.yaml -f compose.google-cloud.yaml --profile full up -d --build --wait
 
 # Redis만 필요할 때
 docker compose --env-file infra/local/.env up -d redis
@@ -49,7 +50,7 @@ docker compose --env-file infra/local/.env --profile full ps
 docker compose --env-file infra/local/.env --profile full down
 ```
 
-AI 워커는 노트 이벤트를 처리합니다. 합성 API 키로 전체 스택을 기동한 상태에서는 실제 노트 생성·AI 처리 확인을 하지 않습니다. 실제 Google 로그인을 사용하려면 OAuth 클라이언트의 리디렉션 URI를 `http://localhost:8080/login/oauth2/code/google`로 등록합니다.
+AI 워커는 노트 이벤트를 처리합니다. Cloud 인증 없이 워커를 켜서 대기 이벤트를 소비하지 마세요. Gemini 전환 시 과거 큐를 그대로 재생하지 않고 현재 노트를 기준으로 새 큐를 구성합니다. 실제 Google 로그인을 사용하려면 OAuth 클라이언트의 리디렉션 URI를 `http://localhost:8080/login/oauth2/code/google`로 등록합니다.
 
 ## 프론트엔드
 
@@ -76,13 +77,15 @@ Node/pnpm 버전은 웹의 `.nvmrc`와 `package.json`을 따릅니다. 프론트
 | PostgreSQL | 0.5 | 256 MiB | 개인 개발용 단일 인스턴스 |
 | Redis | 0.25 | 128 MiB | 데이터 메모리 80 MiB, noeviction |
 | Elasticsearch | 1.0 | 768 MiB | JVM heap 384 MiB, 사용하지 않는 ES ML 기능 비활성화 |
-| RabbitMQ | 0.5 | 384 MiB | 메모리 경보 192 MiB |
+| RabbitMQ | 0.5 | 512 MiB | 메모리 경보 192 MiB, Erlang scheduler 2개 |
 | Neo4j | 1.0 | 768 MiB | heap 최대 384 MiB, page cache 128 MiB |
 | 백엔드 | 1.0 | 768 MiB | JVM heap 컨테이너 메모리의 55% |
 | AI API | 0.75 | 512 MiB | worker 1개, 자동 reload 없음 |
 | AI 워커 | 0.5 | 512 MiB | 단일 소비자 프로세스 |
 
 상한은 예약 메모리나 실제 사용량이 아닙니다. 확인한 PC는 8 GiB, Docker VM은 약 3.8 GiB여서 전체 프로필의 최대치와 VM 여유분을 동시에 충족하지 못할 수 있습니다. 평소에는 필요한 프로필만 실행하고, 빌드는 `COMPOSE_PARALLEL_LIMIT=1`로 순차 실행하는 편이 좋습니다. 전역 Docker Desktop 설정은 자동으로 변경하지 않습니다.
+
+`RABBITMQ_HOSTNAME`은 RabbitMQ 볼륨의 노드 식별자입니다. 새 설치에서는 `rabbitmq`를 사용합니다. 기존 볼륨에서는 실행 중 컨테이너의 hostname 또는 볼륨 안의 `rabbit@<hostname>`을 확인해 같은 값을 유지하세요. 값을 바꾸면 기존 큐가 보이지 않는 새 노드로 시작될 수 있습니다.
 
 재부팅 시 전부 자동 실행되지 않도록 `restart: "no"`를 사용합니다. 로그는 서비스당 5 MiB × 2개로 제한합니다. 데이터는 Compose 프로젝트 이름에 종속된 named volume에 저장하며 이전 운영 서버의 외부 볼륨·네트워크를 사용하지 않습니다. worktree 두 개를 동시에 실행하려면 `-p`로 프로젝트명을 구분하고 호스트 포트도 다르게 지정해야 합니다. Git worktree만으로 Docker 자원이 분리되지는 않습니다.
 
